@@ -26,7 +26,7 @@ This guide walks you through setting up the Kong Native Event Proxy (KNEP) + Okt
 2. Navigate to **Applications** > **Applications**
 3. Click **Create App Integration**
 4. Select **OIDC - OpenID Connect**
-5. Choose **Web Application**
+5. Choose **Single Page Application**
 6. Configure the application:
    - **App integration name**: Kong Native Event Proxy Demo
    - **Grant type**: Authorization Code, Client Credentials
@@ -37,7 +37,6 @@ This guide walks you through setting up the Kong Native Event Proxy (KNEP) + Okt
 ### Note Application Credentials
 After creating the application, note down:
 - Client ID
-- Client Secret
 - Okta Domain
 - Issuer URL (typically `https://your-domain.okta.com`)
 
@@ -57,14 +56,13 @@ The KNEP configuration uses your Okta JWKS endpoint for token validation:
    # Edit .env
    # Okta Configuration
    OKTA_CLIENT_ID=your_okta_client_id_here
-   OKTA_CLIENT_SECRET=your_okta_client_secret_here
    OKTA_ISSUER=https://your-domain.okta.com
-
+   
    # Kong Konnect Configuration
    KONNECT_API_TOKEN=your_konnect_token
    KONNECT_CONTROL_PLANE_ID=your_control_plane_id
    ```
-
+   
 3. **Update KNEP configuration**:
    ```bash
    # Edit config/kong/config.yaml
@@ -98,7 +96,7 @@ The KNEP configuration uses your Okta JWKS endpoint for token validation:
 
 ## Step 4: Configure Virtual Clusters
 
-The KNEP configuration is loaded from `config/kong/config.yaml`. You can verify the configuration:
+The KNEP configuration needs to be loaded into Konnect from `config/kong/config.yaml`. You can verify the configuration:
 
 ```bash
 # Check KNEP health
@@ -110,19 +108,6 @@ docker-compose logs knep-konnect
 # Test Kafka connectivity
 docker-compose exec kafka1 kafka-topics.sh --list --bootstrap-server kafka1:9092
 ```
-
-## Step 5: Test the Setup
-
-Run the demo script to test the complete flow:
-
-```bash
-./scripts/demo.sh
-```
-
-This script will:
-1. Obtain an OAuth token from Okta
-2. Use the token to publish a message through KNEP to Kafka
-3. Consume the message from the Kafka cluster
 
 ## Troubleshooting
 
@@ -145,10 +130,10 @@ If you encounter issues, check:
    ```bash
    # Test KNEP health
    curl http://localhost:8080/health/probes/liveness
-
+   
    # Test Kafka cluster
    docker-compose exec kafka1 kafka-topics.sh --list --bootstrap-server kafka1:9092
-
+   
    # Test virtual cluster ports
    nc -zv localhost 19092  # team-a virtual cluster
    nc -zv localhost 29092  # team-b virtual cluster (if configured)
@@ -157,7 +142,7 @@ If you encounter issues, check:
 ## Next Steps
 
 Once the setup is complete, you can:
-- Explore the example client applications in `examples/`
+- Explore the example client application in `demo-client/`
 - Modify the KNEP configuration in `config/kong/config.yaml`
 - Test OAuth flows with virtual clusters
 - Monitor events through Kafka UI at http://localhost:8180

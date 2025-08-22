@@ -1,40 +1,22 @@
-# Configuration Reference
+# System Configuration Guide
 
-This document provides detailed configuration information for the Kong Native Event Proxy (KNEP) + Okta OAuth + Kafka demo.
+This document covers the system-level configuration for Kong Event Gateway, Kafka, and authentication components.
 
-## Environment Variables
+> 📋 **Environment Variables**: See [Environment Variables Reference](environment-variables.md) for all environment variable details.
 
-### Main Environment (.env)
+## Architecture Overview
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `OKTA_CLIENT_ID` | OAuth application client ID | - | Yes |
-| `OKTA_CLIENT_SECRET` | OAuth application client secret | - | Yes |
-| `OKTA_ISSUER` | OAuth issuer URL | - | Yes |
-| `CALLBACK_URL` | OAuth callback URL | http://localhost:3000/auth/callback | No |
-| `SESSION_SECRET` | Session secret for demo client | - | Yes |
-| `KONNECT_API_TOKEN` | Kong Konnect API token | - | Yes |
-| `KONNECT_API_HOSTNAME` | Kong Konnect API hostname | us.api.konghq.com | No |
-| `KONNECT_CONTROL_PLANE_ID` | Kong Konnect control plane ID | - | Yes |
-| `KAFKA_BOOTSTRAP` | Kafka bootstrap servers for demo client | localhost:19092 | No |
+The demo consists of these configurable components:
+- **Kong Event Gateway (KNEP)**: Event proxy with OAuth authentication
+- **Kafka Cluster**: 3-node cluster in KRaft mode
+- **Okta Integration**: OAuth/OIDC identity provider
+- **Demo Client**: React + Node.js application
 
-### KNEP Configuration (config/kong/config.yaml)
+## Kong Event Gateway (KNEP) Configuration
 
-The KNEP configuration defines virtual clusters with OAuth authentication:
+### Configuration File: `config/kong/config.yaml`
 
-| Section | Description | Example |
-|---------|-------------|---------|
-| `backend_clusters` | Kafka cluster connection | kafka1:9092, kafka2:9092, kafka3:9092 |
-| `virtual_clusters` | Virtual cluster definitions | team-a, team-b |
-| `authentication` | OAuth Bearer configuration | JWKS endpoint, mediation type |
-| `topic_rewrite` | Topic prefixing rules | a-, b- prefixes |
-| `route_by` | Port-based routing | 19092+ for team-a, 29092+ for team-b |
-
-## Kong Native Event Proxy Configuration
-
-### Virtual Cluster Configuration (config/kong/config.yaml)
-
-The KNEP configuration defines virtual clusters with authentication:
+KNEP uses a YAML configuration file that defines virtual clusters with OAuth authentication:
 
 ```yaml
 backend_clusters:
@@ -63,62 +45,58 @@ virtual_clusters:
       type: port
 ```
 
-### Key Configuration Elements
+### Configuration Sections
 
-- **Backend Clusters**: Define Kafka broker connections
-- **Virtual Clusters**: Isolated environments with authentication
-- **Authentication**: SASL OAuth Bearer with JWKS validation
-- **Topic Rewrite**: Automatic topic prefixing
-- **Port Routing**: Port-based virtual cluster access
+| Section | Purpose | Key Settings |
+|---------|---------|--------------|
+| `backend_clusters` | Kafka cluster connections | Bootstrap servers, cluster name |
+| `virtual_clusters` | Isolated tenant environments | Authentication, routing, topic rewriting |
+| `authentication` | OAuth Bearer token validation | JWKS endpoint, timeout settings |
+| `topic_rewrite` | Automatic topic prefixing | Prefix rules for tenant isolation |
+| `route_by` | Client routing strategy | Port-based routing configuration |
 
 ## Kafka Cluster Configuration
 
-### KRaft Mode Configuration
+### KRaft Mode (No Zookeeper)
 
-The Kafka cluster runs in KRaft mode (no Zookeeper):
+The Kafka cluster runs in KRaft mode for simplified operations:
 
-- **Cluster ID**: `abcdefghijklmnopqrstuv`
-- **Node IDs**: 1, 2, 3
-- **Controller Quorum**: All nodes participate in controller quorum
-- **Listeners**: INTERNAL (inter-broker), CONTROLLER (raft), EXTERNAL (client)
+| Setting | Value | Purpose |
+|---------|-------|---------|
+| **Cluster ID** | `abcdefghijklmnopqrstuv` | Unique cluster identifier |
+| **Node IDs** | 1, 2, 3 | Broker identification |
+| **Controller Quorum** | All nodes | Distributed consensus |
+| **Mode** | Combined (broker + controller) | Simplified deployment |
 
-### Broker Configuration
+### Network Configuration
 
-Each broker has:
-- **Internal listener**: kafka[1-3]:9092 (inter-broker communication)
-- **Controller listener**: kafka[1-3]:9093 (raft protocol)
-- **External listener**: localhost:909[4-6] (client connections)
+| Broker | Internal | Controller | External |
+|--------|----------|------------|----------|
+| kafka1 | kafka1:9092 | kafka1:9093 | localhost:9094 |
+| kafka2 | kafka2:9092 | kafka2:9093 | localhost:9095 |
+| kafka3 | kafka3:9092 | kafka3:9093 | localhost:9096 |
 
-### Topic Configuration
+### Default Topic Settings
 
-Default topic settings:
 - **Partitions**: 3 (distributed across brokers)
-- **Replication factor**: 3 (full replication)
-- **Retention**: 7 days
+- **Replication Factor**: 3 (full replication for fault tolerance)
+- **Retention**: 7 days (configurable per topic)
 
-## OAuth Configuration
+## OAuth/OIDC Configuration
 
-### Okta Application Setup
+### Okta Application Requirements
 
-1. **Application Type**: Web Application
-2. **Grant Types**:
-   - Authorization Code
-   - Client Credentials
-3. **Redirect URIs**:
-   - `http://localhost:3000/auth/callback` - Demo client callback
-4. **JWKS Endpoint**: Used by KNEP for token validation
-   - `https://your-domain.okta.com/oauth2/v1/keys`
+| Setting | Value | Purpose |
+|---------|-------|---------|
+| **Application Type** | Web Application | Supports authorization code flow |
+| **Grant Types** | Authorization Code, Client Credentials | Frontend auth + API access |
+| **Redirect URIs** | `http://localhost:3000/auth/callback` | Demo client callback |
+| **Sign-out URIs** | `http://localhost:3000` | Post-logout redirect |
+| **Trusted Origins** | `http://localhost:3000` | CORS configuration |
 
-### Token Validation
+### KNEP Token Validation
 
-KNEP validates OAuth tokens using SASL OAuth Bearer:
-
-1. **JWKS-based validation** using Okta's public keys
-2. **Signature verification** with RS256 algorithm
-3. **Expiration checking** with configurable timeout
-4. **Issuer validation** against Okta domain
-
-### SASL OAuth Bearer Configuration
+KNEP validates OAuth tokens using SASL OAuth Bearer mechanism:
 
 ```yaml
 sasl_oauth_bearer:
@@ -127,92 +105,91 @@ sasl_oauth_bearer:
     timeout: 1s
 ```
 
-The JWKS endpoint provides public keys for token signature verification.
+**Validation Process**:
+1. **JWKS Retrieval**: Fetch public keys from Okta
+2. **Signature Verification**: Validate JWT signature (RS256)
+3. **Claims Validation**: Check expiration, issuer, audience
+4. **Access Decision**: Allow/deny Kafka operations
 
-## Docker Compose Configuration
+## Docker Compose Services
 
-### Services
+| Service | Purpose | Ports | Dependencies |
+|---------|---------|-------|--------------|
+| **kafka1-3** | Kafka cluster (KRaft mode) | 9094-9096 | None |
+| **kong-event-gateway** | KNEP proxy | 19092, 8080 | Kafka cluster |
+| **kafka-ui** | Kafka monitoring UI | 8180 | Kafka cluster |
+| **demo-client** | React + Node.js demo | 3000 | KNEP, Okta |
 
-1. **kafka1, kafka2, kafka3**: 3-node Kafka cluster in KRaft mode
-2. **kong-event-gateway**: Kong Native Event Proxy (KNEP)
-3. **kafka-ui**: Web UI for Kafka monitoring (port 8180)
-4. **demo-client**: Optional demo web application (port 3000)
+### Network Configuration
 
-### Networks
+- **Network**: `kong-kafka-net` (bridge mode)
+- **Internal DNS**: Service discovery via container names
+- **External Access**: Selected ports exposed to host
 
-- **kong-kafka-net**: Bridge network for service communication
+### Volume Mounts
 
-### Volumes
+- **KNEP Config**: `./config/kong/config.yaml` → `/etc/kong/config.yaml`
+- **Certificates**: `./config/certs/` → `/etc/ssl/certs/` (if TLS enabled)
+- **Kafka Data**: Ephemeral (containers only)
 
-- Kafka data is stored in container temporary directories
-- KNEP configuration mounted from `./config/kong/config.yaml`
-- TLS certificates mounted from `./config/certs` (if needed)
-
-## Security Considerations
-
-### Production Recommendations
-
-1. **SSL/TLS**: Enable SSL for all communications
-2. **Secrets Management**: Use proper secret management
-3. **Network Security**: Restrict network access
-4. **Token Security**: Short-lived tokens with refresh
-5. **Monitoring**: Enable comprehensive logging and monitoring
+## Security Configuration
 
 ### Development vs Production
 
-| Aspect | Development | Production |
-|--------|-------------|------------|
-| SSL | Optional | Required |
-| Secrets | Environment files | Secret management |
-| Kafka | 3-node cluster | Multi-AZ cluster |
-| KNEP | Single instance | Load balanced |
-| Monitoring | Basic logging | Full observability |
+| Component | Development | Production |
+|-----------|-------------|------------|
+| **TLS/SSL** | Disabled (HTTP) | Required (HTTPS) |
+| **Secrets** | `.env` files | Vault/K8s secrets |
+| **Network** | Docker bridge | Private subnets |
+| **Kafka** | Single cluster | Multi-AZ deployment |
+| **KNEP** | Single instance | Load balanced |
+| **Monitoring** | Console logs | Centralized logging |
 
-## Troubleshooting Configuration
+### Production Hardening
 
-### Common Issues
+1. **Enable TLS**: All service-to-service communication
+2. **Rotate Secrets**: Regular token and certificate rotation
+3. **Network Isolation**: Private networks, security groups
+4. **Access Control**: Principle of least privilege
+5. **Monitoring**: Comprehensive observability stack
 
-1. **OAuth token validation fails**
-   - Check Okta domain and credentials
-   - Verify JWKS URI accessibility
-   - Confirm scope configuration
+## Configuration Validation
 
-2. **KNEP cannot connect to Kafka**
-   - Verify all Kafka brokers are running
-   - Check network connectivity between containers
-   - Confirm Kafka listeners configuration
-
-3. **Virtual cluster access issues**
-   - Check port mappings (19092+ for team-a)
-   - Verify KNEP configuration syntax
-   - Confirm backend cluster connectivity
-
-### Configuration Validation
-
-Use these commands to validate configuration:
+### Health Checks
 
 ```bash
-# Check KNEP health
+# KNEP health and readiness
 curl http://localhost:8080/health/probes/liveness
+curl http://localhost:8080/health/probes/readiness
 
-# Validate Okta JWKS endpoint
+# Okta JWKS endpoint
 curl https://your-domain.okta.com/oauth2/v1/keys
 
-# Test Kafka cluster connectivity
+# Kafka cluster status
 docker-compose exec kafka1 kafka-broker-api-versions --bootstrap-server kafka1:9092
-docker-compose exec kafka2 kafka-broker-api-versions --bootstrap-server kafka2:9092
-docker-compose exec kafka3 kafka-broker-api-versions --bootstrap-server kafka3:9092
+
+# Virtual cluster connectivity
+nc -zv localhost 19092
 ```
+
+### Common Configuration Issues
+
+| Issue | Symptoms | Solution |
+|-------|----------|----------|
+| **OAuth validation fails** | 401 errors, auth failures | Check Okta domain, JWKS endpoint |
+| **KNEP-Kafka connection** | Connection timeouts | Verify Kafka brokers running |
+| **Virtual cluster access** | Port unreachable | Check KNEP config, port mappings |
+| **Topic access denied** | Authorization errors | Verify OAuth token scopes |
 
 ## Advanced Configuration
 
 ### Multiple Virtual Clusters
 
-Add additional virtual clusters in `config/kong/config.yaml`:
+Add additional tenant isolation by configuring multiple virtual clusters:
 
 ```yaml
 virtual_clusters:
-  - name: team-c
+  - name: team-b
     authentication:
       - sasl_oauth_bearer:
           jwks:
@@ -221,28 +198,36 @@ virtual_clusters:
     backend_cluster_name: kafka-localhost
     topic_rewrite:
       prefix:
-        value: c-
+        value: b-
       type: prefix
     route_by:
       port:
         min_broker_id: 1
-        offset: 20000
+        offset: 10000  # team-b uses ports 29092+
       type: port
 ```
 
-### TLS Configuration
+### TLS/SSL Configuration
 
-Enable TLS for production:
+For production deployments, enable TLS:
 
-1. Generate certificates in `config/certs/`
-2. Update KNEP configuration to use TLS
-3. Configure Kafka brokers for SSL
+1. **Generate Certificates**: Place in `config/certs/`
+2. **Update KNEP Config**: Enable TLS listeners
+3. **Configure Kafka**: Enable SSL on all brokers
+4. **Update Clients**: Use SSL bootstrap servers
 
-### Monitoring and Observability
+### Observability Configuration
 
-Enable debug logging:
+Enable detailed logging and monitoring:
 
 ```yaml
+# KNEP logging
 environment:
   KNEP__OBSERVABILITY__LOG_FLAGS: "info,knep=debug"
+
+# Kafka JMX metrics
+environment:
+  KAFKA_JMX_OPTS: "-Dcom.sun.management.jmxremote=true"
 ```
+
+> 📖 **Next Steps**: See [Deployment Guide](deployment.md) for production deployment patterns.
