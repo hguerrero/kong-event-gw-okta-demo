@@ -1,26 +1,45 @@
 # Kong Native Event Proxy Demo Client
 
-This Node.js application provides a web interface for authenticating with Okta using OpenID Connect (OIDC) and demonstrates interaction with Kong Native Event Proxy (KNEP) virtual clusters. It uses Okta's official `@okta/oidc-middleware` for seamless integration.
+This **application** provides a web interface for authenticating with Okta using OpenID Connect (OIDC) and demonstrates interaction with Kong Native Event Proxy (KNEP) virtual clusters. It features a fully typed React frontend with a Node.js API backend.
 
 ## Features
 
-- 🔐 Okta OIDC authentication using official Okta middleware
-- 🎫 Display access and refresh tokens
-- 👤 Show user profile information
-- 📋 Display ID token claims
-- 🔄 Session management with logout functionality
-- 📋 **List Kafka topics through KNEP virtual clusters using Okta access token**
+- 🎨 **Modern TypeScript React UI** with Material-UI components
+- 🔐 **Okta OIDC authentication** using official Okta React SDK
+- 🎫 **Token management** with automatic refresh and type safety
+- 👤 **User profile** with detailed information display
+- 📋 **Interactive dashboards** with real-time data
+- 🚀 **Kafka topic browsing** through KNEP virtual clusters
+- 📨 **Message viewing** with syntax highlighting and filtering
+- 📱 **Responsive design** that works on all devices
+- 🔄 **Real-time updates** and comprehensive error handling
+- 🛡️ **Type Safety** with full TypeScript implementation
+- 🎯 **Custom Hooks** for API state management
+- 🚨 **Error Boundaries** for graceful error handling
+
+## Architecture
+
+```
+React Frontend (Port 3000)
+       ↓ (API calls with Bearer token)
+Node.js API Server (Port 3001)
+       ↓ (SASL OAuth Bearer)
+Kong Native Event Proxy (KNEP)
+       ↓ (Authenticated requests)
+3-Node Kafka Cluster
+```
 
 ## Prerequisites
 
 1. **Okta Developer Account**: You need an Okta developer account and an application configured for OIDC.
-2. **Node.js**: Make sure you have Node.js installed (version 14 or higher recommended).
+2. **Node.js**: Make sure you have Node.js installed (version 16 or higher recommended).
+3. **Kong Native Event Proxy**: KNEP configured with SASL OAuth Bearer authentication.
 
 ## Okta Application Setup
 
 1. Log in to your Okta Developer Console
 2. Go to **Applications** > **Create App Integration**
-3. Choose **OIDC - OpenID Connect** and **Web Application**
+3. Choose **OIDC - OpenID Connect** and **Single Page Application**
 4. Configure your application:
    - **App integration name**: Choose any name (e.g., "KNEP Demo Client")
    - **Grant type**: Authorization Code
@@ -29,80 +48,147 @@ This Node.js application provides a web interface for authenticating with Okta u
    - **Controlled access**: Choose as per your requirements
 5. Save the application and note down:
    - **Client ID**
-   - **Client Secret**
    - **Okta domain** (e.g., `https://your-domain.okta.com`)
 
 ## Installation
 
-1. Install dependencies:
+1. **Install server dependencies**:
    ```bash
    npm install
    ```
 
-2. Create a `.env` file based on `.env.example`:
+2. **Install client dependencies**:
    ```bash
-   cp .env.example .env
+   npm run install-client
    ```
 
-3. Edit the `.env` file with your Okta application credentials:
+3. **Configure environment variables**:
+   ```bash
+   # Copy main environment file
+   cp .env.example .env
+   
+   # Copy React environment file
+   cp client/.env.example client/.env.local
+   ```
+
+4. **Edit the environment files**:
+
+   **Main `.env` file**:
    ```env
    OKTA_CLIENT_ID=your_actual_client_id
-   OKTA_CLIENT_SECRET=your_actual_client_secret
    OKTA_ISSUER=https://your-domain.okta.com
+   KAFKA_BOOTSTRAP=localhost:19092
    ```
-
-   **Important**: The `OKTA_ISSUER` should be your base Okta domain (e.g., `https://your-domain.okta.com`), not the OAuth2 authorization server URL.
+   
+   **React `client/.env.local` file**:
+   
+   ```env
+   REACT_APP_OKTA_ISSUER=https://your-domain.okta.com
+   REACT_APP_OKTA_CLIENT_ID=your_actual_client_id
+   REACT_APP_API_URL=http://localhost:3001
+   ```
 
 ## Usage
 
-1. Start the application:
+### Development Mode
+
+1. **Start both servers**:
    ```bash
    npm start
    ```
+   This starts both the API server (port 3001) and React dev server (port 3000)
 
-2. Open your browser and navigate to `http://localhost:3000`
+2. **Open your browser** and navigate to `http://localhost:3000`
 
-3. Click "Login with Okta" to authenticate
+3. **Authenticate** by clicking "Login with Okta"
 
-4. After successful authentication, you'll see:
-   - Your access token
-   - Your refresh token (if available)
-   - User profile information
-   - Token claims
-   - Additional user object details
-   - **Button to list Kafka topics using your access token**
+4. **Explore the features**:
+   - 🏠 **Dashboard**: Overview with user info and quick actions
+   - 📋 **Kafka Topics**: Browse topics through KNEP virtual clusters
+   - 📨 **Message Viewer**: View and analyze Kafka messages
+   - 👤 **Profile**: Detailed user and token information
+
+### Production Mode
+
+1. **Build the application**:
+   ```bash
+   npm run build
+   ```
+
+2. **Start the production server**:
+   ```bash
+   NODE_ENV=production npm run server
+   ```
+
+3. **Access the app** at `http://localhost:3001`
 
 ## Environment Variables
+
+### Server Environment (`.env`)
 
 | Variable | Required | Description | Default |
 |----------|----------|-------------|---------|
 | `OKTA_CLIENT_ID` | ✅ | Your Okta application client ID | - |
-| `OKTA_CLIENT_SECRET` | ✅ | Your Okta application client secret | - |
 | `OKTA_ISSUER` | ✅ | Your Okta domain (e.g., https://your-domain.okta.com) | - |
-| `CALLBACK_URL` | ❌ | OAuth callback URL | `http://localhost:3000/auth/callback` |
-| `SESSION_SECRET` | ❌ | Session encryption secret | Auto-generated |
-| `PORT` | ❌ | Server port | `3000` |
 | `KAFKA_BOOTSTRAP` | ❌ | KNEP virtual cluster endpoint | `localhost:19092` |
+| `PORT` | ❌ | API server port | `3001` |
+| `NODE_ENV` | ❌ | Environment mode | `development` |
+
+### React Environment (`client/.env.local`)
+
+| Variable | Required | Description | Default |
+|----------|----------|-------------|---------|
+| `REACT_APP_OKTA_ISSUER` | ✅ | Your Okta domain | - |
+| `REACT_APP_OKTA_CLIENT_ID` | ✅ | Your Okta application client ID | - |
+| `REACT_APP_API_URL` | ❌ | API server URL | `http://localhost:3001` |
 
 ## Available Routes
 
-- `/` - Home page with login
-- `/dashboard` - Token information + Kafka topics button
-- `/kafka/topics` - List Kafka topics through KNEP using Okta token (clickable)
-- `/kafka/topics/:topicName/messages` - **NEW**: View messages from specific topic through KNEP
-- `/debug` - Session debugging
-- `/logout` - Logout functionality
+### Frontend Routes (React App)
+- `/` - Modern home page with feature overview and login
+- `/dashboard` - Interactive dashboard with user info and quick actions
+- `/kafka/topics` - Beautiful topic browser with search and filtering
+- `/kafka/topics/:topicName/messages` - Advanced message viewer with syntax highlighting
+- `/profile` - Detailed user profile and token information
+- `/login/callback` - Okta authentication callback (automatic)
+
+### API Routes (Node.js Backend)
+- `GET /api/status` - API health check and configuration info
+- `GET /api/kafka/topics` - List Kafka topics (requires Bearer token)
+- `GET /api/kafka/topics/:topicName/messages` - Get messages from topic (requires Bearer token)
 
 ## Scripts
 
-- `npm start` - Start the web server
-- `npm run dev` - Start the web server (same as start)
-- `npm run list-topics` - Run the original Kafka topics listing script
+- `npm start` - Start both API server and React dev server (development)
+- `npm run server` - Start only the API server
+- `npm run client` - Start only the React dev server
+- `npm run build` - Build React app for production
+- `npm run install-client` - Install React app dependencies
+- `npm run type-check` - Run TypeScript type checking
+- `npm run type-check:watch` - Run TypeScript type checking in watch mode
+
+## Technology Stack
+
+### Frontend
+- **TypeScript 4.9+** - Full type safety and modern JavaScript features
+- **React 18** - Modern React with hooks and functional components
+- **Material-UI (MUI) 5** - Beautiful, accessible UI components with TypeScript support
+- **Okta React SDK** - Official Okta authentication for React with TypeScript definitions
+- **React Router 6** - Client-side routing with TypeScript support
+- **Axios** - HTTP client with TypeScript interfaces
+
+### Backend
+- **Node.js** - JavaScript runtime
+- **Express** - Web application framework
+- **KafkaJS** - Kafka client for Node.js
+- **CORS** - Cross-origin resource sharing
 
 ## Security Notes
 
-- The `SESSION_SECRET` should be set to a secure random string in production
-- In production, ensure `cookie.secure` is set to `true` and use HTTPS
+- **Token-based authentication** using Okta OAuth 2.0
+- **SASL OAuth Bearer** for Kafka authentication through KNEP
+- **Secure token storage** in React app state (not localStorage)
+- **API endpoint protection** with Bearer token validation
 - Store sensitive environment variables securely (not in version control)
 
 ## Troubleshooting
@@ -168,12 +254,3 @@ KAFKA_BOOTSTRAP=localhost:19092
 - Your Okta access token must be valid for JWKS verification
 - Network connectivity to KNEP virtual cluster endpoints
 - KNEP configured with your Okta JWKS endpoint
-
-## Original Kafka Functionality
-
-The original `listTopics.js` script is still available and can be run with:
-```bash
-npm run list-topics
-```
-
-Make sure to set the `KAFKA_BOOTSTRAP` and `KAFKA_TOKEN` environment variables for KNEP functionality.
