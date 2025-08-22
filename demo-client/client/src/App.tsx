@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import KafkaTopics from './pages/KafkaTopics';
 import TopicMessages from './pages/TopicMessages';
 import Profile from './pages/Profile';
+import Settings from './pages/Settings';
 
 const oktaAuthConfig: OktaAuthOptions = {
   issuer: process.env.REACT_APP_OKTA_ISSUER || 'https://your-domain.okta.com',
@@ -42,6 +43,7 @@ const App: React.FC = () => {
               <Route path="/kafka/topics" element={<KafkaTopics />} />
               <Route path="/kafka/topics/:topicName/messages" element={<TopicMessages />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/settings" element={<Settings />} />
               <Route path="/login/callback" element={<LoginCallback />} />
             </Routes>
           </Container>

@@ -31,11 +31,13 @@ import { useOktaAuth } from '@okta/okta-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { kafkaApi } from '../services/api';
 import { TopicMessagesProps, KafkaMessage, TopicMessagesParams } from '../types';
+import { useKafkaConfig } from '../hooks/useKafkaConfig';
 
 const TopicMessages: React.FC<TopicMessagesProps> = () => {
   const { authState } = useOktaAuth();
   const navigate = useNavigate();
   const { topicName } = useParams();
+  const { getConfig, isCustomConfig } = useKafkaConfig();
   const [messages, setMessages] = useState<KafkaMessage[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +56,13 @@ const TopicMessages: React.FC<TopicMessagesProps> = () => {
       setLoading(true);
       setError(null);
       const accessToken = authState?.accessToken?.accessToken;
-      const messagesData = await kafkaApi.getTopicMessages(accessToken!, decodedTopicName, limit);
+      const config = getConfig();
+
+      // Use custom config API if available, otherwise use default
+      const messagesData = config
+        ? await kafkaApi.getTopicMessagesWithConfig(accessToken!, decodedTopicName, limit, config)
+        : await kafkaApi.getTopicMessages(accessToken!, decodedTopicName, limit);
+
       setMessages(messagesData.messages || []);
     } catch (err) {
       console.error('Error fetching messages:', err);
@@ -130,6 +138,14 @@ const TopicMessages: React.FC<TopicMessagesProps> = () => {
           <Typography variant="body1" color="text.secondary">
             Messages retrieved through KNEP virtual clusters
           </Typography>
+          {isCustomConfig && (
+            <Chip
+              label="Using Custom Configuration"
+              color="info"
+              size="small"
+              sx={{ mt: 1 }}
+            />
+          )}
         </Box>
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           <Button

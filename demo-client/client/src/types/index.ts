@@ -147,6 +147,28 @@ export interface UseApiResult<T> {
   refetch: () => Promise<void>;
 }
 
+// Kafka Connection Configuration Types
+export interface KafkaConnectionConfig {
+  bootstrapServers: string;
+  ssl: boolean;
+  saslMechanism?: 'oauthbearer' | 'plain' | 'scram-sha-256' | 'scram-sha-512';
+  username?: string;
+  password?: string;
+  clientId?: string;
+}
+
+export interface KafkaConnectionTestRequest {
+  config: KafkaConnectionConfig;
+  accessToken: string;
+}
+
+export interface KafkaConnectionTestResponse {
+  success: boolean;
+  message: string;
+  error?: string;
+  timestamp: string;
+}
+
 // Theme Types (extending MUI theme)
 declare module '@mui/material/styles' {
   interface Theme {

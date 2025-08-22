@@ -26,27 +26,54 @@ const extractBearerToken = (req) => {
 };
 
 // Kafka configuration function
-function createKafkaClient(accessToken) {
-  const bootstrapServers = process.env.KAFKA_BOOTSTRAP || 'localhost:19092';
+function createKafkaClient(accessToken, config = null) {
+  const bootstrapServers = config?.bootstrapServers || process.env.KAFKA_BOOTSTRAP || 'localhost:19092';
+  const clientId = config?.clientId || 'knep-demo-client';
+  const ssl = config?.ssl !== undefined ? config.ssl : false;
+  const saslMechanism = config?.saslMechanism || 'oauthbearer';
 
-  return new Kafka({
-    clientId: 'knep-demo-client',
+  const kafkaConfig = {
+    clientId,
     brokers: bootstrapServers.split(','),
     logLevel: logLevel.ERROR,
-    ssl: false,
-    sasl: {
+    ssl,
+  };
+
+  // Configure SASL based on mechanism
+  if (saslMechanism === 'oauthbearer') {
+    kafkaConfig.sasl = {
       mechanism: 'oauthbearer',
       oauthBearerProvider: async () => {
         return {
           value: accessToken,
         };
       },
-    },
-  });
+    };
+  } else if (saslMechanism === 'plain') {
+    kafkaConfig.sasl = {
+      mechanism: 'plain',
+      username: config?.username || '',
+      password: config?.password || '',
+    };
+  } else if (saslMechanism === 'scram-sha-256') {
+    kafkaConfig.sasl = {
+      mechanism: 'scram-sha-256',
+      username: config?.username || '',
+      password: config?.password || '',
+    };
+  } else if (saslMechanism === 'scram-sha-512') {
+    kafkaConfig.sasl = {
+      mechanism: 'scram-sha-512',
+      username: config?.username || '',
+      password: config?.password || '',
+    };
+  }
+
+  return new Kafka(kafkaConfig);
 }
 
-async function listKafkaTopics(accessToken) {
-  const kafka = createKafkaClient(accessToken);
+async function listKafkaTopics(accessToken, config = null) {
+  const kafka = createKafkaClient(accessToken, config);
   const admin = kafka.admin();
 
   try {
@@ -58,8 +85,8 @@ async function listKafkaTopics(accessToken) {
   }
 }
 
-async function getTopicMessages(accessToken, topicName, maxMessages = 50) {
-  const kafka = createKafkaClient(accessToken);
+async function getTopicMessages(accessToken, topicName, maxMessages = 50, config = null) {
+  const kafka = createKafkaClient(accessToken, config);
   const consumer = kafka.consumer({ groupId: `web-consumer-${Date.now()}` });
 
   try {
@@ -103,6 +130,31 @@ async function getTopicMessages(accessToken, topicName, maxMessages = 50) {
     });
   } finally {
     await consumer.disconnect();
+  }
+}
+
+async function testKafkaConnection(accessToken, config) {
+  try {
+    const kafka = createKafkaClient(accessToken, config);
+    const admin = kafka.admin();
+
+    await admin.connect();
+    // Try to get cluster metadata as a connection test
+    await admin.describeCluster();
+    await admin.disconnect();
+
+    return {
+      success: true,
+      message: 'Connection successful! Kafka cluster is reachable.',
+      timestamp: new Date().toISOString()
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: 'Connection failed',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    };
   }
 }
 
@@ -178,6 +230,113 @@ app.get('/api/kafka/topics/:topicName/messages', async (req, res) => {
     });
   } catch (error) {
     console.error(`❌ API: Error retrieving messages from topic ${req.params.topicName}:`, error.message);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      topic: req.params.topicName,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Test Kafka connection with custom configuration
+app.post('/api/kafka/test-connection', async (req, res) => {
+  try {
+    const accessToken = extractBearerToken(req);
+    if (!accessToken) {
+      return res.status(401).json({ error: 'Authorization token required' });
+    }
+
+    const { config } = req.body;
+    if (!config) {
+      return res.status(400).json({ error: 'Kafka configuration required' });
+    }
+
+    console.log('🔧 API: Testing Kafka connection with custom config');
+    console.log(`  - Bootstrap servers: ${config.bootstrapServers}`);
+    console.log(`  - SSL: ${config.ssl}`);
+    console.log(`  - SASL mechanism: ${config.saslMechanism}`);
+
+    const result = await testKafkaConnection(accessToken, config);
+    console.log(`${result.success ? '✅' : '❌'} API: Connection test ${result.success ? 'passed' : 'failed'}`);
+
+    res.json(result);
+  } catch (error) {
+    console.error('❌ API: Error testing Kafka connection:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Connection test failed',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Get Kafka topics with custom configuration
+app.post('/api/kafka/topics-with-config', async (req, res) => {
+  try {
+    const accessToken = extractBearerToken(req);
+    if (!accessToken) {
+      return res.status(401).json({ error: 'Authorization token required' });
+    }
+
+    const { config } = req.body;
+    if (!config) {
+      return res.status(400).json({ error: 'Kafka configuration required' });
+    }
+
+    console.log('📋 API: Kafka topics requested with custom config');
+    const topics = await listKafkaTopics(accessToken, config);
+    console.log(`✅ API: Retrieved ${topics.length} Kafka topics with custom config`);
+
+    res.json({
+      success: true,
+      topics: topics,
+      count: topics.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ API: Error listing Kafka topics with custom config:', error.message);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Get Kafka topic messages with custom configuration
+app.post('/api/kafka/topics-with-config/:topicName/messages', async (req, res) => {
+  try {
+    const accessToken = extractBearerToken(req);
+    if (!accessToken) {
+      return res.status(401).json({ error: 'Authorization token required' });
+    }
+
+    const { config } = req.body;
+    if (!config) {
+      return res.status(400).json({ error: 'Kafka configuration required' });
+    }
+
+    const topicName = decodeURIComponent(req.params.topicName);
+    const limit = parseInt(req.query.limit) || 50;
+
+    console.log(`📨 API: Messages requested for topic: ${topicName} with custom config`);
+    console.log(`  - Max messages: ${limit}`);
+
+    const messages = await getTopicMessages(accessToken, topicName, limit, config);
+    console.log(`✅ API: Retrieved ${messages.length} messages from topic: ${topicName} with custom config`);
+
+    res.json({
+      success: true,
+      messages: messages,
+      count: messages.length,
+      topic: topicName,
+      limit: limit,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error(`❌ API: Error retrieving messages from topic ${req.params.topicName} with custom config:`, error.message);
     res.status(500).json({
       success: false,
       error: error.message,

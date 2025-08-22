@@ -15,6 +15,7 @@ import {
   Dashboard as DashboardIcon,
   Topic as TopicIcon,
   Logout as LogoutIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { useOktaAuth } from '@okta/okta-react';
 import { useNavigate } from 'react-router-dom';
@@ -131,6 +132,10 @@ const Navbar: React.FC<NavbarProps> = () => {
               <MenuItem onClick={() => handleNavigate('/kafka/topics')}>
                 <TopicIcon sx={{ mr: 1 }} />
                 Kafka Topics
+              </MenuItem>
+              <MenuItem onClick={() => handleNavigate('/settings')}>
+                <SettingsIcon sx={{ mr: 1 }} />
+                Settings
               </MenuItem>
               <MenuItem onClick={handleLogout}>
                 <LogoutIcon sx={{ mr: 1 }} />

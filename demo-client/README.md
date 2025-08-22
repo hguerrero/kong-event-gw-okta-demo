@@ -16,6 +16,9 @@ This **application** provides a web interface for authenticating with Okta using
 - 🛡️ **Type Safety** with full TypeScript implementation
 - 🎯 **Custom Hooks** for API state management
 - 🚨 **Error Boundaries** for graceful error handling
+- ⚙️ **Dynamic Configuration** - Configure Kafka connection through UI
+- 🔧 **Multiple SASL Mechanisms** - Support for OAuth Bearer, PLAIN, SCRAM-SHA-256/512
+- 💾 **Persistent Settings** - Configuration saved in browser localStorage
 
 ## Architecture
 
@@ -28,6 +31,44 @@ Kong Native Event Proxy (KNEP)
        ↓ (Authenticated requests)
 3-Node Kafka Cluster
 ```
+
+## Dynamic Kafka Configuration
+
+The demo client now supports **dynamic Kafka configuration** through the web UI, allowing you to connect to different Kafka clusters without modifying environment variables or restarting the application.
+
+### Configuration Options
+
+- **Bootstrap Servers**: Comma-separated list of Kafka broker addresses
+- **SSL/TLS**: Enable or disable SSL encryption
+- **SASL Mechanism**: Choose from:
+  - **OAuth Bearer**: Uses your Okta access token (default)
+  - **PLAIN**: Username/password authentication
+  - **SCRAM-SHA-256**: Salted Challenge Response Authentication
+  - **SCRAM-SHA-512**: Enhanced SCRAM with SHA-512
+- **Client ID**: Unique identifier for the Kafka client
+- **Credentials**: Username/password for non-OAuth mechanisms
+
+### How to Use
+
+1. **Access Settings**: Click on your profile menu → **Settings**
+2. **Configure Connection**: Update the Kafka connection parameters
+3. **Test Connection**: Use the "Test Connection" button to verify settings
+4. **Save Configuration**: Settings are automatically saved to browser localStorage
+5. **Use Custom Config**: Topics and messages will use your custom configuration
+
+### Configuration Persistence
+
+- Settings are saved in your browser's localStorage
+- Configuration persists across browser sessions
+- Each browser/device maintains its own configuration
+- Reset to defaults anytime using the "Reset to Defaults" button
+
+### Visual Indicators
+
+When using custom configuration, you'll see:
+- **"Using Custom Configuration"** chip on Kafka Topics page
+- **"Using Custom Configuration"** chip on Topic Messages page
+- Configuration summary in the Settings page
 
 ## Prerequisites
 
@@ -190,6 +231,40 @@ Kong Native Event Proxy (KNEP)
 - **Secure token storage** in React app state (not localStorage)
 - **API endpoint protection** with Bearer token validation
 - Store sensitive environment variables securely (not in version control)
+
+## API Endpoints
+
+The demo client provides both standard and configuration-aware API endpoints:
+
+### Standard Endpoints
+- `GET /api/status` - System status and environment info
+- `GET /api/kafka/topics` - List Kafka topics using default/env configuration
+- `GET /api/kafka/topics/:topicName/messages` - Get messages from a topic
+
+### Configuration-Aware Endpoints
+- `POST /api/kafka/test-connection` - Test Kafka connection with custom config
+- `POST /api/kafka/topics-with-config` - List topics with custom configuration
+- `POST /api/kafka/topics-with-config/:topicName/messages` - Get messages with custom config
+
+### Request Format for Custom Configuration
+
+```javascript
+// POST body for configuration-aware endpoints
+{
+  "config": {
+    "bootstrapServers": "localhost:19092",
+    "ssl": false,
+    "saslMechanism": "oauthbearer", // or "plain", "scram-sha-256", "scram-sha-512"
+    "clientId": "my-client",
+    "username": "user", // for non-oauth mechanisms
+    "password": "pass"  // for non-oauth mechanisms
+  }
+}
+```
+
+### Authentication
+
+All endpoints (except `/api/status`) require an `Authorization: Bearer <token>` header with a valid Okta access token.
 
 ## Troubleshooting
 

@@ -24,10 +24,12 @@ import { useOktaAuth } from '@okta/okta-react';
 import { useNavigate } from 'react-router-dom';
 import { kafkaApi } from '../services/api';
 import { KafkaTopicsProps } from '../types';
+import { useKafkaConfig } from '../hooks/useKafkaConfig';
 
 const KafkaTopics: React.FC<KafkaTopicsProps> = () => {
   const { authState } = useOktaAuth();
   const navigate = useNavigate();
+  const { getConfig, isCustomConfig } = useKafkaConfig();
   const [topics, setTopics] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +46,13 @@ const KafkaTopics: React.FC<KafkaTopicsProps> = () => {
       setLoading(true);
       setError(null);
       const accessToken = authState?.accessToken?.accessToken;
-      const topicsData = await kafkaApi.getTopics(accessToken!);
+      const config = getConfig();
+
+      // Use custom config API if available, otherwise use default
+      const topicsData = config
+        ? await kafkaApi.getTopicsWithConfig(accessToken!, config)
+        : await kafkaApi.getTopics(accessToken!);
+
       setTopics(topicsData.topics || []);
     } catch (err) {
       console.error('Error fetching topics:', err);
@@ -96,6 +104,14 @@ const KafkaTopics: React.FC<KafkaTopicsProps> = () => {
           <Typography variant="h6" color="text.secondary">
             Topics retrieved through KNEP virtual clusters using your Okta access token
           </Typography>
+          {isCustomConfig && (
+            <Chip
+              label="Using Custom Configuration"
+              color="info"
+              size="small"
+              sx={{ mt: 1 }}
+            />
+          )}
         </Box>
         <Button
           variant="contained"
