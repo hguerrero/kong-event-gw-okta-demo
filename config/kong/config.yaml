@@ -1,9 +1,20 @@
 backend_clusters:
-  - bootstrap_servers:
-      - kafka1:9092
-      - kafka2:9092
-      - kafka3:9092
-    name: kafka-localhost
+  - name: confluent-cloud
+    bootstrap_servers: 
+      - <replace-with-your-bootstrap-server>:<replace-with-your-port>
+    authentication:
+      type: sasl_plain
+      sasl_plain:
+        username:
+          type: file
+          file:
+            path: /run/secrets/confluent_cloud_username
+        password:
+          type: file
+          file:
+            path: /run/secrets/confluent_cloud_password
+    tls:
+      insecure_skip_verify: true
 listeners:
   port:
     - advertised_host: knep-konnect
@@ -11,39 +22,16 @@ listeners:
       listen_port_start: 19092
 virtual_clusters:
   - authentication:
-      - mediation:
-          type: anonymous
+      - type: sasl_oauth_bearer
         sasl_oauth_bearer:
           jwks:
-            endpoint: https://integrator-4451946.okta.com/oauth2/v1/keys
+            endpoint: https://your-domain.okta.com/oauth2/v1/keys
             timeout: 1s
-        type: sasl_oauth_bearer
-    backend_cluster_name: kafka-localhost
-    name: team-a
-    rewrite_ids:
-      type: prefix
+        mediation:
+          type: use_backend_cluster
+    backend_cluster_name: confluent-cloud
+    name: team-c
     route_by:
-      port:
-        min_broker_id: 1
       type: port
-    topic_rewrite:
-      prefix:
-        value: a-
-      type: prefix
-  - authentication:
-      - mediation:
-          type: anonymous
-        type: anonymous
-    backend_cluster_name: kafka-localhost
-    name: team-b
-    rewrite_ids:
-      type: prefix
-    route_by:
       port:
-        min_broker_id: 1
-        offset: 10000
-      type: port
-    topic_rewrite:
-      prefix:
-        value: b-
-      type: prefix
+        min_broker_id: 0

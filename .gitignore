@@ -78,3 +78,7 @@ zookeeper-data/
 
 # Kong data
 kong-data/
+
+# Secrets
+config/secrets/*
+!config/secrets/README.md
