@@ -1,15 +1,15 @@
 # Kong Event Gateway + Okta OAuth Demo
 
-This repository demonstrates how to configure Kong Event Gateway to mediate authentication to a Kafka cluster using OAuth with Okta as the identity provider.
+This repository demonstrates how to configure Kong Event Gateway to mediate authentication to Confluent Cloud using OAuth with Okta as the identity provider.
 
 ## Overview
 
 This demo showcases:
-- Kong Native Event Proxy (KNEP) configuration for Kafka integration
+- Kong Native Event Proxy (KNEP) configuration for Confluent Cloud integration
 - Okta OAuth 2.0 authentication with SASL OAuth Bearer
-- Multi-broker Kafka cluster setup
+- Confluent Cloud managed Kafka service
 - Virtual cluster configuration with topic prefixing
-- Docker-based local development environment
+- Secure cloud-to-cloud connectivity
 
 ## Architecture
 
@@ -30,10 +30,8 @@ graph TB
     %% Kong Native Event Proxy Layer
     APIServer --> KNEP[⚡ Kong Native Event Proxy<br/>KNEP Virtual Cluster]
 
-    %% Kafka Cluster
-    KNEP --> Kafka1[📊 Kafka Broker 1<br/>Port 9092]
-    KNEP --> Kafka2[📊 Kafka Broker 2<br/>Port 9093]
-    KNEP --> Kafka3[📊 Kafka Broker 3<br/>Port 9094]
+    %% Confluent Cloud
+    KNEP --> ConfluentCloud[☁️ Confluent Cloud<br/>Managed Kafka Service]
 
     %% Kong Konnect Management
     KNEP --> KongKonnect[☁️ Kong Konnect<br/>Control Plane]
@@ -44,21 +42,21 @@ graph TB
     DemoClient -.->|"3. API Calls + Bearer Token"| APIServer
     APIServer -.->|"4. Token Validation"| Okta
     APIServer -.->|"5. Kafka Operations<br/>SASL OAuth Bearer"| KNEP
-    KNEP -.->|"6. Topic/Message Queries"| Kafka1
+    KNEP -.->|"6. Topic/Message Queries<br/>SASL_SSL"| ConfluentCloud
 
     %% Styling
     classDef userLayer fill:#e1f5fe,stroke:#01579b,stroke-width:2px
     classDef authLayer fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
     classDef appLayer fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
     classDef proxyLayer fill:#fff3e0,stroke:#e65100,stroke-width:2px
-    classDef kafkaLayer fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    classDef cloudLayer fill:#fce4ec,stroke:#880e4f,stroke-width:2px
     classDef mgmtLayer fill:#e0f2f1,stroke:#004d40,stroke-width:2px
 
     class User,DemoClient userLayer
     class Okta authLayer
     class APIServer appLayer
     class KNEP proxyLayer
-    class Kafka1,Kafka2,Kafka3,ZK kafkaLayer
+    class ConfluentCloud cloudLayer
     class KongKonnect mgmtLayer
 ```
 
@@ -70,7 +68,7 @@ graph TB
 | **API Server** | Backend API with OAuth validation | Node.js + Express + Okta SDK | 3001 |
 | **Okta** | Identity Provider & OAuth Server | Okta Cloud Service | - |
 | **KNEP** | Event Gateway & Kafka Proxy | Kong Native Event Proxy | 19092 |
-| **Kafka Cluster** | Event Streaming Platform | Apache Kafka (3 brokers) | 9092-9094 |
+| **Confluent Cloud** | Managed Kafka Service | Confluent Cloud | 9092 (SSL) |
 | **Kong Konnect** | Control Plane Management | Kong Konnect Cloud | - |
 
 ### Authentication & Authorization Flow
@@ -82,7 +80,7 @@ sequenceDiagram
     participant O as Okta
     participant API as API Server
     participant K as KNEP
-    participant KF as Kafka
+    participant CC as Confluent Cloud
 
     U->>DC: 1. Access Application
     DC->>O: 2. Redirect to Okta Login
@@ -94,8 +92,8 @@ sequenceDiagram
     API->>K: 8. Kafka Request (SASL OAuth Bearer)
     K->>O: 9. Validate OAuth Token
     O->>K: 10. Token Valid
-    K->>KF: 11. Execute Kafka Operation
-    KF->>K: 12. Return Data
+    K->>CC: 11. Execute Kafka Operation (SASL_SSL)
+    CC->>K: 12. Return Data
     K->>API: 13. Return Response
     API->>DC: 14. Return JSON Response
     DC->>U: 15. Display Results
@@ -121,10 +119,8 @@ flowchart LR
         D[KNEP Virtual Cluster<br/>Port 19092]
     end
 
-    subgraph "Event Streaming Tier"
-        E1[Kafka Broker 1<br/>Port 9092]
-        E2[Kafka Broker 2<br/>Port 9093]
-        E3[Kafka Broker 3<br/>Port 9094]
+    subgraph "Cloud Streaming Tier"
+        E[Confluent Cloud<br/>Managed Kafka<br/>SASL_SSL:9092]
     end
 
     subgraph "Management Tier"
@@ -135,23 +131,21 @@ flowchart LR
     A <-->|REST API<br/>Bearer Token| B
     B <-->|Token Validation<br/>JWKS| C
     B <-->|Kafka Protocol<br/>SASL OAuth| D
-    D <-->|Topic Operations<br/>Message Queries| E1
-    D <-->|Topic Operations<br/>Message Queries| E2
-    D <-->|Topic Operations<br/>Message Queries| E3
+    D <-->|SASL_SSL<br/>Topic Operations<br/>Message Queries| E
     D <-->|Configuration<br/>Monitoring| F
 
     classDef client fill:#e3f2fd,stroke:#1976d2
     classDef api fill:#f1f8e9,stroke:#388e3c
     classDef auth fill:#fce4ec,stroke:#c2185b
     classDef gateway fill:#fff8e1,stroke:#f57c00
-    classDef kafka fill:#f3e5f5,stroke:#7b1fa2
+    classDef cloud fill:#f3e5f5,stroke:#7b1fa2
     classDef mgmt fill:#e0f2f1,stroke:#00695c
 
     class A client
     class B api
     class C auth
     class D gateway
-    class E1,E2,E3,Z kafka
+    class E cloud
     class F mgmt
 ```
 
@@ -199,6 +193,7 @@ graph TB
         Internet[🌐 Internet]
         OktaCloud[☁️ Okta Cloud]
         KonnectCloud[☁️ Kong Konnect]
+        ConfluentCloud[☁️ Confluent Cloud<br/>Managed Kafka]
     end
 
     subgraph "Docker Network: kong-kafka-net"
@@ -213,12 +208,6 @@ graph TB
         subgraph "Event Gateway"
             KNEP[KNEP Proxy<br/>:19092]
         end
-
-        subgraph "Kafka Cluster"
-            K1[Kafka-1<br/>:9092]
-            K2[Kafka-2<br/>:9093]
-            K3[Kafka-3<br/>:9094]
-        end
     end
 
     Internet --> DemoApp
@@ -227,21 +216,17 @@ graph TB
     APIGateway --> OktaCloud
     APIGateway --> KNEP
     KNEP --> KonnectCloud
-    KNEP --> K1
-    KNEP --> K2
-    KNEP --> K3
+    KNEP --> ConfluentCloud
 
     classDef external fill:#e8eaf6,stroke:#3f51b5
     classDef frontend fill:#e1f5fe,stroke:#0277bd
     classDef backend fill:#e8f5e8,stroke:#2e7d32
     classDef gateway fill:#fff3e0,stroke:#f57c00
-    classDef kafka fill:#fce4ec,stroke:#c2185b
 
-    class Internet,OktaCloud,KonnectCloud external
+    class Internet,OktaCloud,KonnectCloud,ConfluentCloud external
     class DemoApp frontend
     class APIGateway backend
     class KNEP gateway
-    class K1,K2,K3,ZK kafka
 ```
 
 ### Key Architectural Benefits
@@ -251,10 +236,10 @@ graph TB
 | **🔐 Zero Trust Security** | Every request authenticated & authorized | Okta OIDC + SASL OAuth Bearer |
 | **⚡ Event Gateway Pattern** | Unified API for event streaming | Kong Native Event Proxy (KNEP) |
 | **🏗️ Microservices Ready** | Loosely coupled, independently deployable | Docker containers + REST APIs |
-| **📈 Horizontal Scalability** | Scale components independently | Multi-broker Kafka + Load balancing |
-| **🛡️ Defense in Depth** | Multiple security layers | TLS + OAuth + RBAC + Network isolation |
+| **📈 Managed Scalability** | Auto-scaling managed service | Confluent Cloud + Elastic scaling |
+| **🛡️ Defense in Depth** | Multiple security layers | TLS + OAuth + RBAC + Cloud security |
 | **🔄 Event-Driven Architecture** | Asynchronous, resilient communication | Kafka topics + Event sourcing patterns |
-| **☁️ Cloud Native** | Container-first, orchestration ready | Docker Compose + Kubernetes ready |
+| **☁️ Cloud Native** | Fully managed cloud services | Confluent Cloud + Kong Konnect |
 | **🎯 Developer Experience** | Modern tooling & type safety | TypeScript + Material-UI + Hot reload |
 
 ### Design Decisions
@@ -274,8 +259,9 @@ graph TB
 ## Prerequisites
 
 - Docker and Docker Compose
-- Okta Account
+- Okta Account (for identity provider)
 - Kong Konnect Account (for KNEP)
+- Confluent Cloud Account (for managed Kafka)
 - Basic understanding of Kafka and OAuth 2.0
 
 ## Quick Start
@@ -289,7 +275,9 @@ graph TB
 2. **Configure environment**
    - Copy `.env.example` to `.env`
    - Update with your Okta and Kong Konnect credentials
+   - Add Confluent Cloud credentials to `config/secrets/` directory
    - See [Environment Variables Guide](docs/environment-variables.md) for detailed configuration
+   - See [Confluent Cloud Setup](config/secrets/README.md) for authentication files
 
 3. **Start the environment**
    ```bash
@@ -313,7 +301,6 @@ graph TB
 │   │   └── config.yaml       # KNEP virtual cluster configuration
 │   └── certs/                # TLS certificates (if needed)
 ├── scripts/                  # Demo and utility scripts
-├── examples/                 # Example client applications
 ├── demo-client/              # Demo web application
 └── docs/                     # Additional documentation
 ```
@@ -324,17 +311,18 @@ graph TB
 - Virtual cluster configuration in `config/kong/config.yaml`
 - SASL OAuth Bearer authentication
 - Topic prefixing and routing
-- Multi-broker Kafka cluster support
+- Confluent Cloud integration with SASL_SSL
 
 ### Okta OAuth
 - OAuth 2.0 application setup
 - JWKS endpoint configuration
 - Token validation with SASL OAuth Bearer
 
-### Kafka Cluster
-- 3-node Kafka cluster with KRaft mode
-- Internal and external listeners
-- Topic partitioning and replication
+### Confluent Cloud
+- Fully managed Kafka service
+- Enterprise-grade security and compliance
+- Auto-scaling and global availability
+- SASL_SSL authentication with API keys
 
 ## Usage
 

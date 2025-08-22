@@ -1,6 +1,6 @@
 # System Configuration Guide
 
-This document covers the system-level configuration for Kong Event Gateway, Kafka, and authentication components.
+This document covers the system-level configuration for Kong Event Gateway, Confluent Cloud, and authentication components.
 
 > 📋 **Environment Variables**: See [Environment Variables Reference](environment-variables.md) for all environment variable details.
 
@@ -8,7 +8,7 @@ This document covers the system-level configuration for Kong Event Gateway, Kafk
 
 The demo consists of these configurable components:
 - **Kong Event Gateway (KNEP)**: Event proxy with OAuth authentication
-- **Kafka Cluster**: 3-node cluster in KRaft mode
+- **Confluent Cloud**: Fully managed Kafka service
 - **Okta Integration**: OAuth/OIDC identity provider
 - **Demo Client**: React + Node.js application
 
@@ -20,11 +20,22 @@ KNEP uses a YAML configuration file that defines virtual clusters with OAuth aut
 
 ```yaml
 backend_clusters:
-  - bootstrap_servers:
-      - kafka1:9092
-      - kafka2:9092
-      - kafka3:9092
-    name: kafka-localhost
+  - name: confluent-cloud
+    bootstrap_servers: 
+      - <replace-with-your-bootstrap-server>:<replace-with-your-port>
+    authentication:
+      type: sasl_plain
+      sasl_plain:
+        username:
+          type: file
+          file:
+            path: /run/secrets/confluent_cloud_username
+        password:
+          type: file
+          file:
+            path: /run/secrets/confluent_cloud_password
+    tls:
+      insecure_skip_verify: true
 
 virtual_clusters:
   - authentication:
@@ -33,15 +44,11 @@ virtual_clusters:
             endpoint: https://your-domain.okta.com/oauth2/v1/keys
             timeout: 1s
         type: sasl_oauth_bearer
-    backend_cluster_name: kafka-localhost
+    backend_cluster_name: confluent-cloud
     name: team-a
-    topic_rewrite:
-      prefix:
-        value: a-
-      type: prefix
     route_by:
       port:
-        min_broker_id: 1
+        min_broker_id: 0
       type: port
 ```
 
@@ -49,38 +56,41 @@ virtual_clusters:
 
 | Section | Purpose | Key Settings |
 |---------|---------|--------------|
-| `backend_clusters` | Kafka cluster connections | Bootstrap servers, cluster name |
+| `backend_clusters` | Confluent Cloud connections | Bootstrap servers, SASL_SSL security |
 | `virtual_clusters` | Isolated tenant environments | Authentication, routing, topic rewriting |
 | `authentication` | OAuth Bearer token validation | JWKS endpoint, timeout settings |
-| `topic_rewrite` | Automatic topic prefixing | Prefix rules for tenant isolation |
 | `route_by` | Client routing strategy | Port-based routing configuration |
 
-## Kafka Cluster Configuration
+## Confluent Cloud Configuration
 
-### KRaft Mode (No Zookeeper)
+### Managed Kafka Service
 
-The Kafka cluster runs in KRaft mode for simplified operations:
+Confluent Cloud provides a fully managed Kafka service with enterprise features:
+
+| Feature | Description | Benefit |
+|---------|-------------|---------|
+| **Auto-Scaling** | Automatic capacity adjustment | No manual scaling required |
+| **Multi-AZ** | Cross-availability zone deployment | High availability and fault tolerance |
+| **Security** | Built-in encryption and authentication | Enterprise-grade security |
+| **Monitoring** | Comprehensive metrics and alerting | Operational visibility |
+
+### Connection Configuration
 
 | Setting | Value | Purpose |
 |---------|-------|---------|
-| **Cluster ID** | `abcdefghijklmnopqrstuv` | Unique cluster identifier |
-| **Node IDs** | 1, 2, 3 | Broker identification |
-| **Controller Quorum** | All nodes | Distributed consensus |
-| **Mode** | Combined (broker + controller) | Simplified deployment |
+| **Protocol** | SASL_SSL | Secure authentication and encryption |
+| **SASL Mechanism** | PLAIN | Username/password authentication |
+| **Bootstrap Server** | `cluster.region.provider.confluent.cloud:9092` | Cluster endpoint |
+| **Credentials** | API Key + API Secret | Authentication credentials |
 
-### Network Configuration
+### Authentication Files
 
-| Broker | Internal | Controller | External |
-|--------|----------|------------|----------|
-| kafka1 | kafka1:9092 | kafka1:9093 | localhost:9094 |
-| kafka2 | kafka2:9092 | kafka2:9093 | localhost:9095 |
-| kafka3 | kafka3:9092 | kafka3:9093 | localhost:9096 |
+Required files in `config/secrets/`:
+- **confluent-api-key.txt**: Confluent Cloud API key
+- **confluent-api-secret.txt**: Confluent Cloud API secret
+- **confluent-bootstrap.txt**: Bootstrap server endpoint
 
-### Default Topic Settings
-
-- **Partitions**: 3 (distributed across brokers)
-- **Replication Factor**: 3 (full replication for fault tolerance)
-- **Retention**: 7 days (configurable per topic)
+> 📋 **Setup Guide**: See [Confluent Cloud Setup](../config/secrets/README.md) for detailed instructions.
 
 ## OAuth/OIDC Configuration
 
@@ -115,22 +125,20 @@ sasl_oauth_bearer:
 
 | Service | Purpose | Ports | Dependencies |
 |---------|---------|-------|--------------|
-| **kafka1-3** | Kafka cluster (KRaft mode) | 9094-9096 | None |
-| **kong-event-gateway** | KNEP proxy | 19092, 8080 | Kafka cluster |
-| **kafka-ui** | Kafka monitoring UI | 8180 | Kafka cluster |
+| **kong-event-gateway** | KNEP proxy | 19092, 8080 | Confluent Cloud |
 | **demo-client** | React + Node.js demo | 3000 | KNEP, Okta |
 
 ### Network Configuration
 
 - **Network**: `kong-kafka-net` (bridge mode)
-- **Internal DNS**: Service discovery via container names
+- **External Services**: Confluent Cloud, Okta, Kong Konnect
 - **External Access**: Selected ports exposed to host
 
 ### Volume Mounts
 
 - **KNEP Config**: `./config/kong/config.yaml` → `/etc/kong/config.yaml`
+- **Confluent Secrets**: `./config/secrets/` → `/run/secrets/` (API keys)
 - **Certificates**: `./config/certs/` → `/etc/ssl/certs/` (if TLS enabled)
-- **Kafka Data**: Ephemeral (containers only)
 
 ## Security Configuration
 
@@ -141,7 +149,7 @@ sasl_oauth_bearer:
 | **TLS/SSL** | Disabled (HTTP) | Required (HTTPS) |
 | **Secrets** | `.env` files | Vault/K8s secrets |
 | **Network** | Docker bridge | Private subnets |
-| **Kafka** | Single cluster | Multi-AZ deployment |
+| **Confluent Cloud** | Shared cluster | Dedicated cluster |
 | **KNEP** | Single instance | Load balanced |
 | **Monitoring** | Console logs | Centralized logging |
 
@@ -165,8 +173,13 @@ curl http://localhost:8080/health/probes/readiness
 # Okta JWKS endpoint
 curl https://your-domain.okta.com/oauth2/v1/keys
 
-# Kafka cluster status
-docker-compose exec kafka1 kafka-broker-api-versions --bootstrap-server kafka1:9092
+# Confluent Cloud connectivity (requires kafkacat/kcat)
+kafkacat -b $(cat config/secrets/confluent-bootstrap.txt) \
+  -X security.protocol=SASL_SSL \
+  -X sasl.mechanism=PLAIN \
+  -X sasl.username=$(cat config/secrets/confluent-api-key.txt) \
+  -X sasl.password=$(cat config/secrets/confluent-api-secret.txt) \
+  -L
 
 # Virtual cluster connectivity
 nc -zv localhost 19092
@@ -177,9 +190,9 @@ nc -zv localhost 19092
 | Issue | Symptoms | Solution |
 |-------|----------|----------|
 | **OAuth validation fails** | 401 errors, auth failures | Check Okta domain, JWKS endpoint |
-| **KNEP-Kafka connection** | Connection timeouts | Verify Kafka brokers running |
+| **KNEP-Confluent connection** | Connection timeouts | Verify Confluent Cloud credentials |
 | **Virtual cluster access** | Port unreachable | Check KNEP config, port mappings |
-| **Topic access denied** | Authorization errors | Verify OAuth token scopes |
+| **Topic access denied** | Authorization errors | Verify Confluent Cloud API key permissions |
 
 ## Advanced Configuration
 
@@ -195,7 +208,7 @@ virtual_clusters:
           jwks:
             endpoint: https://your-domain.okta.com/oauth2/v1/keys
         type: sasl_oauth_bearer
-    backend_cluster_name: kafka-localhost
+    backend_cluster_name: confluent-cloud
     topic_rewrite:
       prefix:
         value: b-
@@ -209,12 +222,12 @@ virtual_clusters:
 
 ### TLS/SSL Configuration
 
-For production deployments, enable TLS:
+Confluent Cloud uses TLS by default. For additional security:
 
-1. **Generate Certificates**: Place in `config/certs/`
-2. **Update KNEP Config**: Enable TLS listeners
-3. **Configure Kafka**: Enable SSL on all brokers
-4. **Update Clients**: Use SSL bootstrap servers
+1. **Client Certificates**: Optional mTLS for enhanced security
+2. **KNEP TLS**: Enable TLS listeners for client connections
+3. **Certificate Management**: Use proper certificate rotation
+4. **Network Security**: Configure security groups and firewalls
 
 ### Observability Configuration
 
@@ -225,9 +238,10 @@ Enable detailed logging and monitoring:
 environment:
   KNEP__OBSERVABILITY__LOG_FLAGS: "info,knep=debug"
 
-# Kafka JMX metrics
+# Confluent Cloud metrics (via API)
 environment:
-  KAFKA_JMX_OPTS: "-Dcom.sun.management.jmxremote=true"
+  CONFLUENT_CLOUD_API_KEY: "{{ .Env.CONFLUENT_API_KEY }}"
+  CONFLUENT_CLOUD_API_SECRET: "{{ .Env.CONFLUENT_API_SECRET }}"
 ```
 
 > 📖 **Next Steps**: See [Deployment Guide](deployment.md) for production deployment patterns.
