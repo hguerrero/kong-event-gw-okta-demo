@@ -1,0 +1,136 @@
+name: kafka_cluster_with_knep
+
+services:
+  # Kafka Cluster
+  kafka1:
+    image: apache/kafka:3.7.0
+    container_name: kafka1
+    ports:
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: INTERNAL://kafka1:9092,CONTROLLER://kafka1:9093,EXTERNAL://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka1:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:9093,2@kafka2:9093,3@kafka3:9093
+      KAFKA_CLUSTER_ID: 'abcdefghijklmnopqrstuv'
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+    networks:
+      - kong-kafka-net
+
+  kafka2:
+    image: apache/kafka:3.7.0
+    container_name: kafka2
+    ports:
+      - "9095:9095"
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: INTERNAL://kafka2:9092,CONTROLLER://kafka2:9093,EXTERNAL://0.0.0.0:9095
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka2:9092,EXTERNAL://localhost:9095
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:9093,2@kafka2:9093,3@kafka3:9093
+      KAFKA_CLUSTER_ID: 'abcdefghijklmnopqrstuv'
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+    networks:
+      - kong-kafka-net
+
+  kafka3:
+    image: apache/kafka:3.7.0
+    container_name: kafka3
+    ports:
+      - "9096:9096"
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: INTERNAL://kafka3:9092,CONTROLLER://kafka3:9093,EXTERNAL://0.0.0.0:9096
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka3:9092,EXTERNAL://localhost:9096
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:9093,2@kafka2:9093,3@kafka3:9093
+      KAFKA_CLUSTER_ID: 'abcdefghijklmnopqrstuv'
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+    networks:
+      - kong-kafka-net
+
+  # Kong Event Gateway
+  kong-event-gateway:
+    image: kong/kong-native-event-proxy:latest
+    container_name: knep-konnect
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+    ports:
+      - "19092-19192:19092-19192"
+      - "29092-29192:29092-29192"
+      - "8080:8080"
+      - "8443:8443"
+    environment:
+      KONNECT_API_TOKEN: ${KONNECT_API_TOKEN:-}
+      KONNECT_API_HOSTNAME: ${KONNECT_API_HOSTNAME:-us.api.konghq.com}
+      KONNECT_CONTROL_PLANE_ID: ${KONNECT_CONTROL_PLANE_ID:-}
+      KNEP__RUNTIME__DRAIN_DURATION: 1s # makes shutdown quicker, not recommended to be set like this in production 
+      # KNEP__OBSERVABILITY__LOG_FLAGS: "info,knep=debug" # Uncomment for debug logging
+    healthcheck:
+      test: curl -f http://localhost:8080/health/probes/liveness
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./config/certs:/var/tls
+    networks:
+      - kong-kafka-net
+
+  # Kafka UI (Optional - for monitoring)
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+    ports:
+      - "8180:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: backend
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka1:9092
+    networks:
+      - kong-kafka-net
+
+  # Demo Client Application (Optional)
+  demo-client:
+    build:
+      context: ./demo-client
+      dockerfile: Dockerfile
+    container_name: demo-client
+    depends_on:
+      - kong-event-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      # Okta OIDC Configuration
+      - OKTA_CLIENT_ID=${OKTA_CLIENT_ID}
+      - OKTA_CLIENT_SECRET=${OKTA_CLIENT_SECRET}
+      - OKTA_ISSUER=${OKTA_ISSUER}
+      # Optional Configuration
+      - CALLBACK_URL=${CALLBACK_URL:-http://localhost:3000/auth/callback}
+      - APP_BASE_URL=${APP_BASE_URL:-http://localhost:3000}
+      - SESSION_SECRET=${SESSION_SECRET:-your-session-secret-change-in-production}
+      - PORT=${PORT:-3000}
+      # Kafka Configuration
+      - KAFKA_BOOTSTRAP=${KAFKA_BOOTSTRAP:-localhost:19092}
+    networks:
+      - kong-kafka-net
+    profiles:
+      - demo
+
+networks:
+  kong-kafka-net:
+    driver: bridge
