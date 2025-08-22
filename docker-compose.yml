@@ -104,28 +104,33 @@ services:
     networks:
       - kong-kafka-net
 
-  # Demo Client Application (Optional)
+  # Demo Client Application (React + Material-UI + Node.js API)
   demo-client:
     build:
       context: ./demo-client
       dockerfile: Dockerfile
+      args:
+        REACT_APP_OKTA_ISSUER: ${OKTA_ISSUER}
+        REACT_APP_OKTA_CLIENT_ID: ${OKTA_CLIENT_ID}
+        REACT_APP_API_URL: ""
     container_name: demo-client
     depends_on:
       - kong-event-gateway
     ports:
-      - "3000:3000"
+      - "3000:3001"  # Map host port 3000 to container port 3001 (production server)
     environment:
-      # Okta OIDC Configuration
-      - OKTA_CLIENT_ID=${OKTA_CLIENT_ID}
-      - OKTA_CLIENT_SECRET=${OKTA_CLIENT_SECRET}
-      - OKTA_ISSUER=${OKTA_ISSUER}
-      # Optional Configuration
-      - CALLBACK_URL=${CALLBACK_URL:-http://localhost:3000/auth/callback}
-      - APP_BASE_URL=${APP_BASE_URL:-http://localhost:3000}
-      - SESSION_SECRET=${SESSION_SECRET:-your-session-secret-change-in-production}
-      - PORT=${PORT:-3000}
-      # Kafka Configuration
-      - KAFKA_BOOTSTRAP=${KAFKA_BOOTSTRAP:-localhost:19092}
+      # Node.js API Server Runtime Configuration
+      NODE_ENV: production
+      PORT: 3001
+
+      # Okta Configuration (for API server)
+      OKTA_CLIENT_ID: ${OKTA_CLIENT_ID}
+      OKTA_ISSUER: ${OKTA_ISSUER}
+
+      # Kafka Configuration (for API server)
+      KAFKA_BOOTSTRAP: ${KAFKA_BOOTSTRAP:-localhost:19092}
+
+      # Note: React environment variables are baked into the build during Docker build phase
     networks:
       - kong-kafka-net
     profiles:
