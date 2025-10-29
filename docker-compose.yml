@@ -1,21 +1,23 @@
-name: kafka_cluster_with_knep
+name: kong_event_gw_with_confluent
 
 services:
   # Kong Event Gateway
   kong-event-gateway:
-    image: kong/kong-native-event-proxy:latest
+    image: kong/kong-event-gateway-dev:latest
     container_name: knep-konnect
     ports:
       - "19092-19192:19092-19192"
       - "29092-29192:29092-29192"
       - "8080:8080"
       - "8443:8443"
+    env_file: 
+      - "konnect.env"
     environment:
-      KONNECT_API_TOKEN: ${KONNECT_API_TOKEN:-}
-      KONNECT_API_HOSTNAME: ${KONNECT_API_HOSTNAME:-us.api.konghq.com}
-      KONNECT_CONTROL_PLANE_ID: ${KONNECT_CONTROL_PLANE_ID:-}
-      KNEP__RUNTIME__DRAIN_DURATION: 1s # makes shutdown quicker, not recommended to be set like this in production
-      # KNEP__OBSERVABILITY__LOG_FLAGS: "info,knep=debug" # Uncomment for debug logging
+      # KONNECT_API_TOKEN: ${KONNECT_API_TOKEN:-}
+      # KONNECT_API_HOSTNAME: ${KONNECT_API_HOSTNAME:-us.api.konghq.com}
+      # KONNECT_CONTROL_PLANE_ID: ${KONNECT_CONTROL_PLANE_ID:-}
+      KEG__RUNTIME__DRAIN_DURATION: 1s # makes shutdown quicker, not recommended to be set like this in production
+      KEG__OBSERVABILITY__LOG_FLAGS: "info,keg=debug" # Uncomment for debug logging
     healthcheck:
       test: curl -f http://localhost:8080/health/probes/liveness
       interval: 10s
