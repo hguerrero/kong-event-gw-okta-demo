@@ -9,84 +9,83 @@ const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#003459', // Kong's primary blue
-      light: '#1E88E5',
-      dark: '#001E2B',
+      main: '#000F06',
+      light: '#1a3329',
+      dark: '#000000',
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#00D4AA', // Kong's teal/green accent
-      light: '#4DFFCD',
-      dark: '#00A085',
-      contrastText: '#000000',
+      main: '#CCFF00',
+      light: '#d9ff4d',
+      dark: '#99cc00',
+      contrastText: '#000F06',
     },
     background: {
       default: '#ffffff',
       paper: '#ffffff',
     },
     text: {
-      primary: '#1a1a1a',
-      secondary: '#666666',
+      primary: '#000F06',
+      secondary: '#4A4D49',
     },
     grey: {
-      50: '#fafafa',
-      100: '#f5f5f5',
-      200: '#eeeeee',
-      300: '#e0e0e0',
-      400: '#bdbdbd',
-      500: '#9e9e9e',
-      600: '#757575',
-      700: '#616161',
-      800: '#424242',
-      900: '#212121',
+      50: '#E7EDE5',
+      100: '#D7DED4',
+      200: '#CDD4CB',
+      300: '#B7BDB5',
+      400: '#a3a9a1',
+      500: '#858983',
+      600: '#6b706c',
+      700: '#4A4D49',
+      800: '#2a2d29',
+      900: '#101110',
     },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Funnel Sans", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
-      fontSize: '3.5rem',
+      fontSize: '4.5rem',
       fontWeight: 700,
-      lineHeight: 1.2,
+      lineHeight: 1.08,
       letterSpacing: '-0.02em',
     },
     h2: {
-      fontSize: '2.75rem',
+      fontSize: '2rem',
       fontWeight: 700,
-      lineHeight: 1.2,
-      letterSpacing: '-0.01em',
+      lineHeight: 1.19,
     },
     h3: {
-      fontSize: '2.25rem',
+      fontSize: '1.75rem',
       fontWeight: 600,
       lineHeight: 1.3,
     },
     h4: {
-      fontSize: '1.75rem',
+      fontSize: '1.5rem',
       fontWeight: 600,
       lineHeight: 1.4,
     },
     h5: {
-      fontSize: '1.5rem',
-      fontWeight: 500,
-      lineHeight: 1.4,
-    },
-    h6: {
       fontSize: '1.25rem',
       fontWeight: 500,
       lineHeight: 1.4,
     },
+    h6: {
+      fontSize: '1.125rem',
+      fontWeight: 500,
+      lineHeight: 1.4,
+    },
     body1: {
-      fontSize: '1rem',
-      lineHeight: 1.6,
+      fontSize: '1.25rem',
+      lineHeight: 1.4,
     },
     body2: {
       fontSize: '0.875rem',
       lineHeight: 1.5,
     },
     button: {
+      fontFamily: '"Space Grotesk", "Funnel Sans", sans-serif',
+      fontWeight: 600,
       textTransform: 'none',
-      fontWeight: 500,
-      fontSize: '0.875rem',
     },
   },
   shape: {
@@ -103,8 +102,8 @@ const theme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundColor: '#003459',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12)',
+          backgroundColor: '#000F06',
+          boxShadow: 'none',
         },
       },
     },
@@ -112,8 +111,8 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)',
-          borderRadius: 12,
-          border: '1px solid #e0e0e0',
+          borderRadius: 8,
+          border: '1px solid #CDD4CB',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           '&:hover': {
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08)',
@@ -127,22 +126,35 @@ const theme = createTheme({
         root: {
           borderRadius: 8,
           textTransform: 'none',
-          fontWeight: 500,
-          padding: '10px 24px',
-          fontSize: '0.875rem',
+          fontWeight: 600,
+          padding: '12px 24px',
+          fontSize: '1rem',
+          fontFamily: '"Space Grotesk", "Funnel Sans", sans-serif',
           transition: 'all 0.2s ease-in-out',
         },
         contained: {
-          boxShadow: '0 2px 4px rgba(0, 52, 89, 0.2)',
+          backgroundColor: '#CCFF00',
+          color: '#000F06',
+          boxShadow: 'none',
           '&:hover': {
-            boxShadow: '0 4px 8px rgba(0, 52, 89, 0.3)',
+            backgroundColor: '#b3e600',
+            boxShadow: 'none',
             transform: 'translateY(-1px)',
+          },
+        },
+        containedPrimary: {
+          backgroundColor: '#000F06',
+          color: '#ffffff',
+          '&:hover': {
+            backgroundColor: '#1a3329',
           },
         },
         outlined: {
           borderWidth: '2px',
+          borderColor: '#000F06',
           '&:hover': {
             borderWidth: '2px',
+            borderColor: '#000F06',
             transform: 'translateY(-1px)',
           },
         },
@@ -151,16 +163,16 @@ const theme = createTheme({
     MuiChip: {
       styleOverrides: {
         root: {
-          borderRadius: 16,
+          borderRadius: 8,
           fontWeight: 500,
         },
         colorPrimary: {
-          backgroundColor: '#003459',
+          backgroundColor: '#000F06',
           color: '#ffffff',
         },
         colorSecondary: {
-          backgroundColor: '#00D4AA',
-          color: '#000000',
+          backgroundColor: '#CCFF00',
+          color: '#000F06',
         },
       },
     },
@@ -170,10 +182,10 @@ const theme = createTheme({
           '& .MuiOutlinedInput-root': {
             borderRadius: 8,
             '&:hover .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#003459',
+              borderColor: '#000F06',
             },
             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#003459',
+              borderColor: '#000F06',
               borderWidth: '2px',
             },
           },
@@ -184,6 +196,13 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 8,
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
         },
       },
     },
