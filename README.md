@@ -264,6 +264,106 @@ graph TB
 - Confluent Cloud Account (for managed Kafka)
 - Basic understanding of Kafka and OAuth 2.0
 
+## Deploying with Terraform
+
+This repository includes Terraform configuration to deploy the Kong Event Gateway infrastructure to Kong Konnect.
+
+### Terraform Structure
+
+```
+terraform/
+├── versions.tf                 # Terraform and provider versions
+├── main.tf                     # Root configuration
+├── modules/
+│   ├── event-gateway/          # Konnect Event Gateway resources
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   └── data-plane/            # Docker container for KEG data plane
+│       ├── main.tf
+│       └── ...
+└── environments/
+    └── dev/                    # Development environment
+        ├── main.tf
+        ├── variables.tf
+        ├── providers.tf
+        ├── versions.tf
+        ├── terraform.tfvars
+        └── terraform.tfvars.example
+```
+
+**What gets deployed:**
+- Event Gateway, Backend Cluster, Virtual Cluster, Listeners, and Policies in Konnect
+- TLS certificates registered in Konnect
+- Docker container running Kong Event Gateway with certificate-based auth
+
+### Deploy Steps
+
+1. **Navigate to the Terraform environment directory**
+   ```bash
+   cd terraform/environments/dev
+   ```
+
+2. **Copy the example variables file**
+   ```bash
+   cp terraform.tfvars.example terraform.tfvars
+   ```
+
+3. **Edit `terraform.tfvars` with your credentials**
+   ```hcl
+   bootstrap_servers  = ["your-confluent-bootstrap-servers"]
+   okta_jwks_endpoint = "https://your-org.okta.com/oauth2/v1/keys"
+   kafka_username     = "your-confluent-api-key"
+   kafka_password     = "your-confluent-api-secret"
+   ```
+
+4. **Set your Konnect Personal Access Token**
+   ```bash
+   export TF_VAR_konnect_token="your-konnect-pat"
+   ```
+
+5. **Initialize Terraform**
+   ```bash
+   terraform init
+   ```
+
+6. **Review the execution plan**
+   ```bash
+   terraform plan
+   ```
+
+7. **Apply the configuration**
+   ```bash
+   terraform apply
+   ```
+
+### Required Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `konnect_token` | Kong Konnect Personal Access Token (via `TF_VAR_konnect_token` env) | Yes |
+| `bootstrap_servers` | Confluent Cloud Bootstrap Servers | Yes |
+| `okta_jwks_endpoint` | Okta JWKS endpoint for OAuth validation | Yes |
+| `kafka_username` | Confluent Cloud API Key | Yes |
+| `kafka_password` | Confluent Cloud API Secret | Yes |
+
+### Output Values
+
+After deployment, Terraform will output:
+- `event_gateway_id` - The Event Gateway ID
+- `event_gateway_name` - The Event Gateway name
+- `virtual_cluster_id` - The Virtual Cluster ID
+- `backend_cluster_id` - The Backend Cluster ID
+- `data_plane_container_id` - The Docker container ID
+- `data_plane_container_name` - The Docker container name
+
+### Destroy Resources
+
+To destroy all created resources:
+```bash
+terraform destroy
+```
+
 ## Quick Start
 
 1. **Clone the repository**
