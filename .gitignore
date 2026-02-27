@@ -82,3 +82,15 @@ kong-data/
 # Secrets
 config/secrets/*
 !config/secrets/README.md
+
+# Terraform
+terraform/.terraform/
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/terraform.tfvars
+terraform/environments/*/.terraform/
+terraform/environments/*/terraform.tfstate
+terraform/environments/*/terraform.tfstate.backup
+terraform/environments/*/terraform.tfvars
+terraform/environments/*/.terraform.lock.hcl
+!terraform/environments/*/terraform.tfvars.example

@@ -1,0 +1,9 @@
+bootstrap_servers  = ["pkc-xxxxx.us-east-2.aws.confluent.cloud:9092"]
+okta_jwks_endpoint = "https://your-org.okta.com/oauth2/v1/keys"
+
+# Kafka credentials - provide via terraform.tfvars or -var flags:
+# kafka_username = "your-confluent-api-key"
+# kafka_password = "your-confluent-api-secret"
+
+# Konnect token - provide via environment variable:
+# export TF_VAR_konnect_token="your-konnect-pat"
