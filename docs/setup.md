@@ -1,6 +1,6 @@
 # Setup Guide
 
-This guide walks you through setting up the Kong Native Event Proxy (KNEP) + Okta OAuth + Kafka demo environment.
+This guide walks you through setting up the Kong Native Event Proxy (KEG) + Okta OAuth + Kafka demo environment.
 
 ## Prerequisites
 
@@ -16,7 +16,7 @@ This guide walks you through setting up the Kong Native Event Proxy (KNEP) + Okt
 
 ### Kong Konnect Account
 1. Sign up for Kong Konnect at https://konghq.com/
-2. Create a control plane for KNEP
+2. Create a control plane for KEG
 3. Get your API token and control plane ID
 
 ## Step 1: Okta Application Setup
@@ -41,7 +41,7 @@ After creating the application, note down:
 - Issuer URL (typically `https://your-domain.okta.com`)
 
 ### Configure JWKS Endpoint
-The KNEP configuration uses your Okta JWKS endpoint for token validation:
+The KEG configuration uses your Okta JWKS endpoint for token validation:
 - JWKS URL: `https://your-domain.okta.com/oauth2/v1/keys`
 
 ## Step 2: Environment Configuration
@@ -63,7 +63,7 @@ The KNEP configuration uses your Okta JWKS endpoint for token validation:
    KONNECT_CONTROL_PLANE_ID=your_control_plane_id
    ```
    
-3. **Update KNEP configuration**:
+3. **Update KEG configuration**:
    ```bash
    # Edit config/kong/config.yaml
    # Update the JWKS endpoint with your Okta domain
@@ -84,26 +84,26 @@ The KNEP configuration uses your Okta JWKS endpoint for token validation:
    ```
 
    You should see:
-   - Kong Native Event Proxy (knep-konnect)
+   - Kong Native Event Proxy (keg-konnect)
    - 3 Kafka brokers (kafka1, kafka2, kafka3)
    - Kafka UI
    - (Optional) Demo Client
 
-3. **Check KNEP status**:
+3. **Check KEG status**:
    ```bash
    curl -i http://localhost:8080/health/probes/liveness
    ```
 
 ## Step 4: Configure Virtual Clusters
 
-The KNEP configuration needs to be loaded into Konnect from `config/kong/config.yaml`. You can verify the configuration:
+The KEG configuration needs to be loaded into Konnect from `config/kong/config.yaml`. You can verify the configuration:
 
 ```bash
-# Check KNEP health
+# Check KEG health
 curl http://localhost:8080/health/probes/liveness
 
 # Check virtual clusters (via logs)
-docker-compose logs knep-konnect
+docker-compose logs keg-konnect
 
 # Test Kafka connectivity
 docker-compose exec kafka1 kafka-topics.sh --list --bootstrap-server kafka1:9092
@@ -115,7 +115,7 @@ If you encounter issues, check:
 
 1. **Docker services status**:
    ```bash
-   docker-compose logs knep-konnect
+   docker-compose logs keg-konnect
    docker-compose logs kafka1
    docker-compose logs kafka2
    docker-compose logs kafka3
@@ -128,7 +128,7 @@ If you encounter issues, check:
 
 3. **Network connectivity**:
    ```bash
-   # Test KNEP health
+   # Test KEG health
    curl http://localhost:8080/health/probes/liveness
    
    # Test Kafka cluster
@@ -143,7 +143,7 @@ If you encounter issues, check:
 
 Once the setup is complete, you can:
 - Explore the example client application in `demo-client/`
-- Modify the KNEP configuration in `config/kong/config.yaml`
+- Modify the KEG configuration in `config/kong/config.yaml`
 - Test OAuth flows with virtual clusters
 - Monitor events through Kafka UI at http://localhost:8180
 - Access the demo client at http://localhost:3000 (with --profile demo)

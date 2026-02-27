@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-This guide helps you diagnose and resolve common issues with the Kong Native Event Proxy (KNEP) + Okta OAuth + Kafka demo.
+This guide helps you diagnose and resolve common issues with the Kong Native Event Proxy (KEG) + Okta OAuth + Kafka demo.
 
 ## Quick Diagnostics
 
@@ -15,7 +15,7 @@ docker-compose logs kong-event-gateway
 docker-compose logs kafka
 docker-compose logs zookeeper
 
-# Check KNEP health
+# Check KEG health
 curl http://localhost:8080/health/probes/liveness
 
 # Check Kafka topics
@@ -28,11 +28,11 @@ docker-compose exec kafka1 kafka-topics.sh --list --bootstrap-server kafka1:9092
 # Check environment variables
 cat .env
 
-# Validate KNEP configuration
+# Validate KEG configuration
 curl http://localhost:8080/health/probes/liveness
 
-# Check KNEP logs for configuration errors
-docker-compose logs knep-konnect
+# Check KEG logs for configuration errors
+docker-compose logs keg-konnect
 ```
 
 ## Common Issues
@@ -69,27 +69,27 @@ curl https://your-domain.okta.com/.well-known/openid_configuration
 # Check if JWKS endpoint is accessible
 curl https://your-domain.okta.com/oauth2/v1/keys
 
-# Verify KNEP configuration has correct JWKS endpoint
+# Verify KEG configuration has correct JWKS endpoint
 grep -A 5 "jwks:" config/kong/config.yaml
 ```
 
 ### 2. Kong Native Event Proxy Issues
 
 #### Symptoms
-- KNEP health check fails
+- KEG health check fails
 - Virtual cluster access denied
 - Configuration not loading
 
 #### Possible Causes & Solutions
 
-**KNEP Configuration Issues**
+**KEG Configuration Issues**
 ```bash
-# Check KNEP logs
-docker-compose logs knep-konnect
+# Check KEG logs
+docker-compose logs keg-konnect
 
 # Validate configuration syntax
-# KNEP will log configuration errors on startup
-docker-compose restart knep-konnect
+# KEG will log configuration errors on startup
+docker-compose restart keg-konnect
 ```
 
 **Konnect Connection Issues**
@@ -106,7 +106,7 @@ curl -H "Authorization: Bearer $KONNECT_API_TOKEN" \
 **Port Conflicts**
 ```bash
 # Check if ports are in use
-lsof -i :8080   # KNEP health/admin
+lsof -i :8080   # KEG health/admin
 lsof -i :19092  # team-a virtual cluster
 lsof -i :29092  # team-b virtual cluster
 lsof -i :8180   # Kafka UI
@@ -136,10 +136,10 @@ docker-compose restart kafka1 kafka2 kafka3
 
 **Network Issues**
 ```bash
-# Test Kafka connectivity from KNEP container
-docker-compose exec knep-konnect nc -zv kafka1 9092
-docker-compose exec knep-konnect nc -zv kafka2 9092
-docker-compose exec knep-konnect nc -zv kafka3 9092
+# Test Kafka connectivity from KEG container
+docker-compose exec keg-konnect nc -zv kafka1 9092
+docker-compose exec keg-konnect nc -zv kafka2 9092
+docker-compose exec keg-konnect nc -zv kafka3 9092
 
 # Check network configuration
 docker network ls

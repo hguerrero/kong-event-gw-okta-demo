@@ -7,16 +7,16 @@ This document covers the system-level configuration for Kong Event Gateway, Conf
 ## Architecture Overview
 
 The demo consists of these configurable components:
-- **Kong Event Gateway (KNEP)**: Event proxy with OAuth authentication
+- **Kong Event Gateway (KEG)**: Event proxy with OAuth authentication
 - **Confluent Cloud**: Fully managed Kafka service
 - **Okta Integration**: OAuth/OIDC identity provider
 - **Demo Client**: React + Node.js application
 
-## Kong Event Gateway (KNEP) Configuration
+## Kong Event Gateway (KEG) Configuration
 
 ### Configuration File: `config/kong/config.yaml`
 
-KNEP uses a YAML configuration file that defines virtual clusters with OAuth authentication:
+KEG uses a YAML configuration file that defines virtual clusters with OAuth authentication:
 
 ```yaml
 backend_clusters:
@@ -104,9 +104,9 @@ Required files in `config/secrets/`:
 | **Sign-out URIs** | `http://localhost:3000` | Post-logout redirect |
 | **Trusted Origins** | `http://localhost:3000` | CORS configuration |
 
-### KNEP Token Validation
+### KEG Token Validation
 
-KNEP validates OAuth tokens using SASL OAuth Bearer mechanism:
+KEG validates OAuth tokens using SASL OAuth Bearer mechanism:
 
 ```yaml
 sasl_oauth_bearer:
@@ -125,8 +125,8 @@ sasl_oauth_bearer:
 
 | Service | Purpose | Ports | Dependencies |
 |---------|---------|-------|--------------|
-| **kong-event-gateway** | KNEP proxy | 19092, 8080 | Confluent Cloud |
-| **demo-client** | React + Node.js demo | 3000 | KNEP, Okta |
+| **kong-event-gateway** | KEG proxy | 19092, 8080 | Confluent Cloud |
+| **demo-client** | React + Node.js demo | 3000 | KEG, Okta |
 
 ### Network Configuration
 
@@ -136,7 +136,7 @@ sasl_oauth_bearer:
 
 ### Volume Mounts
 
-- **KNEP Config**: `./config/kong/config.yaml` → `/etc/kong/config.yaml`
+- **KEG Config**: `./config/kong/config.yaml` → `/etc/kong/config.yaml`
 - **Confluent Secrets**: `./config/secrets/` → `/run/secrets/` (API keys)
 - **Certificates**: `./config/certs/` → `/etc/ssl/certs/` (if TLS enabled)
 
@@ -150,7 +150,7 @@ sasl_oauth_bearer:
 | **Secrets** | `.env` files | Vault/K8s secrets |
 | **Network** | Docker bridge | Private subnets |
 | **Confluent Cloud** | Shared cluster | Dedicated cluster |
-| **KNEP** | Single instance | Load balanced |
+| **KEG** | Single instance | Load balanced |
 | **Monitoring** | Console logs | Centralized logging |
 
 ### Production Hardening
@@ -166,7 +166,7 @@ sasl_oauth_bearer:
 ### Health Checks
 
 ```bash
-# KNEP health and readiness
+# KEG health and readiness
 curl http://localhost:8080/health/probes/liveness
 curl http://localhost:8080/health/probes/readiness
 
@@ -190,8 +190,8 @@ nc -zv localhost 19092
 | Issue | Symptoms | Solution |
 |-------|----------|----------|
 | **OAuth validation fails** | 401 errors, auth failures | Check Okta domain, JWKS endpoint |
-| **KNEP-Confluent connection** | Connection timeouts | Verify Confluent Cloud credentials |
-| **Virtual cluster access** | Port unreachable | Check KNEP config, port mappings |
+| **KEG-Confluent connection** | Connection timeouts | Verify Confluent Cloud credentials |
+| **Virtual cluster access** | Port unreachable | Check KEG config, port mappings |
 | **Topic access denied** | Authorization errors | Verify Confluent Cloud API key permissions |
 
 ## Advanced Configuration
@@ -225,7 +225,7 @@ virtual_clusters:
 Confluent Cloud uses TLS by default. For additional security:
 
 1. **Client Certificates**: Optional mTLS for enhanced security
-2. **KNEP TLS**: Enable TLS listeners for client connections
+2. **KEG TLS**: Enable TLS listeners for client connections
 3. **Certificate Management**: Use proper certificate rotation
 4. **Network Security**: Configure security groups and firewalls
 
@@ -234,9 +234,9 @@ Confluent Cloud uses TLS by default. For additional security:
 Enable detailed logging and monitoring:
 
 ```yaml
-# KNEP logging
+# KEG logging
 environment:
-  KNEP__OBSERVABILITY__LOG_FLAGS: "info,knep=debug"
+  KEG__OBSERVABILITY__LOG_FLAGS: "info,knep=debug"
 
 # Confluent Cloud metrics (via API)
 environment:

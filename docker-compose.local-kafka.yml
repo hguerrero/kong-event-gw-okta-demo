@@ -62,7 +62,7 @@ services:
   # Kong Event Gateway
   kong-event-gateway:
     image: kong/kong-native-event-proxy:latest
-    container_name: knep-konnect
+    container_name: keg-konnect
     depends_on:
       - kafka1
       - kafka2
@@ -76,8 +76,8 @@ services:
       KONNECT_API_TOKEN: ${KONNECT_API_TOKEN:-}
       KONNECT_API_HOSTNAME: ${KONNECT_API_HOSTNAME:-us.api.konghq.com}
       KONNECT_CONTROL_PLANE_ID: ${KONNECT_CONTROL_PLANE_ID:-}
-      KNEP__RUNTIME__DRAIN_DURATION: 1s # makes shutdown quicker, not recommended to be set like this in production 
-      # KNEP__OBSERVABILITY__LOG_FLAGS: "info,knep=debug" # Uncomment for debug logging
+      KEG__RUNTIME__DRAIN_DURATION: 1s # makes shutdown quicker, not recommended to be set like this in production 
+      # KEG__OBSERVABILITY__LOG_FLAGS: "info,knep=debug" # Uncomment for debug logging
     healthcheck:
       test: curl -f http://localhost:8080/health/probes/liveness
       interval: 10s

@@ -5,7 +5,7 @@ This repository demonstrates how to configure Kong Event Gateway to mediate auth
 ## Overview
 
 This demo showcases:
-- Kong Native Event Proxy (KNEP) configuration for Confluent Cloud integration
+- Kong Native Event Proxy (KEG) configuration for Confluent Cloud integration
 - Okta OAuth 2.0 authentication with SASL OAuth Bearer
 - Confluent Cloud managed Kafka service
 - Virtual cluster configuration with topic prefixing
@@ -28,21 +28,21 @@ graph TB
     DemoClient --> APIServer[🚀 Node.js API Server<br/>Express + OAuth Middleware]
 
     %% Kong Native Event Proxy Layer
-    APIServer --> KNEP[⚡ Kong Native Event Proxy<br/>KNEP Virtual Cluster]
+    APIServer --> KEG[⚡ Kong Native Event Proxy<br/>KEG Virtual Cluster]
 
     %% Confluent Cloud
-    KNEP --> ConfluentCloud[☁️ Confluent Cloud<br/>Managed Kafka Service]
+    KEG --> ConfluentCloud[☁️ Confluent Cloud<br/>Managed Kafka Service]
 
     %% Kong Konnect Management
-    KNEP --> KongKonnect[☁️ Kong Konnect<br/>Control Plane]
+    KEG --> KongKonnect[☁️ Kong Konnect<br/>Control Plane]
 
     %% Data Flow Annotations
     DemoClient -.->|"1. OIDC Login"| Okta
     Okta -.->|"2. JWT Token"| DemoClient
     DemoClient -.->|"3. API Calls + Bearer Token"| APIServer
     APIServer -.->|"4. Token Validation"| Okta
-    APIServer -.->|"5. Kafka Operations<br/>SASL OAuth Bearer"| KNEP
-    KNEP -.->|"6. Topic/Message Queries<br/>SASL_SSL"| ConfluentCloud
+    APIServer -.->|"5. Kafka Operations<br/>SASL OAuth Bearer"| KEG
+    KEG -.->|"6. Topic/Message Queries<br/>SASL_SSL"| ConfluentCloud
 
     %% Styling
     classDef userLayer fill:#e1f5fe,stroke:#01579b,stroke-width:2px
@@ -55,7 +55,7 @@ graph TB
     class User,DemoClient userLayer
     class Okta authLayer
     class APIServer appLayer
-    class KNEP proxyLayer
+    class KEG proxyLayer
     class ConfluentCloud cloudLayer
     class KongKonnect mgmtLayer
 ```
@@ -67,7 +67,7 @@ graph TB
 | **Demo Client** | Web UI for Kafka topic browsing | React + TypeScript + Material-UI | 3000 |
 | **API Server** | Backend API with OAuth validation | Node.js + Express + Okta SDK | 3001 |
 | **Okta** | Identity Provider & OAuth Server | Okta Cloud Service | - |
-| **KNEP** | Event Gateway & Kafka Proxy | Kong Native Event Proxy | 19092 |
+| **KEG** | Event Gateway & Kafka Proxy | Kong Native Event Proxy | 19092 |
 | **Confluent Cloud** | Managed Kafka Service | Confluent Cloud | 9092 (SSL) |
 | **Kong Konnect** | Control Plane Management | Kong Konnect Cloud | - |
 
@@ -79,7 +79,7 @@ sequenceDiagram
     participant DC as Demo Client
     participant O as Okta
     participant API as API Server
-    participant K as KNEP
+    participant K as KEG
     participant CC as Confluent Cloud
 
     U->>DC: 1. Access Application
@@ -116,7 +116,7 @@ flowchart LR
     end
 
     subgraph "Event Gateway Tier"
-        D[KNEP Virtual Cluster<br/>Port 19092]
+        D[KEG Virtual Cluster<br/>Port 19092]
     end
 
     subgraph "Cloud Streaming Tier"
@@ -206,7 +206,7 @@ graph TB
         end
 
         subgraph "Event Gateway"
-            KNEP[KNEP Proxy<br/>:19092]
+            KEG[KEG Proxy<br/>:19092]
         end
     end
 
@@ -214,9 +214,9 @@ graph TB
     DemoApp --> OktaCloud
     DemoApp --> APIGateway
     APIGateway --> OktaCloud
-    APIGateway --> KNEP
-    KNEP --> KonnectCloud
-    KNEP --> ConfluentCloud
+    APIGateway --> KEG
+    KEG --> KonnectCloud
+    KEG --> ConfluentCloud
 
     classDef external fill:#e8eaf6,stroke:#3f51b5
     classDef frontend fill:#e1f5fe,stroke:#0277bd
@@ -226,7 +226,7 @@ graph TB
     class Internet,OktaCloud,KonnectCloud,ConfluentCloud external
     class DemoApp frontend
     class APIGateway backend
-    class KNEP gateway
+    class KEG gateway
 ```
 
 ### Key Architectural Benefits
@@ -234,7 +234,7 @@ graph TB
 | Benefit | Description | Implementation |
 |---------|-------------|----------------|
 | **🔐 Zero Trust Security** | Every request authenticated & authorized | Okta OIDC + SASL OAuth Bearer |
-| **⚡ Event Gateway Pattern** | Unified API for event streaming | Kong Native Event Proxy (KNEP) |
+| **⚡ Event Gateway Pattern** | Unified API for event streaming | Kong Native Event Proxy (KEG) |
 | **🏗️ Microservices Ready** | Loosely coupled, independently deployable | Docker containers + REST APIs |
 | **📈 Managed Scalability** | Auto-scaling managed service | Confluent Cloud + Elastic scaling |
 | **🛡️ Defense in Depth** | Multiple security layers | TLS + OAuth + RBAC + Cloud security |
@@ -244,7 +244,7 @@ graph TB
 
 ### Design Decisions
 
-#### **Why Kong Native Event Proxy (KNEP)?**
+#### **Why Kong Native Event Proxy (KEG)?**
 - **Unified API Surface**: Single gateway for both REST APIs and event streams
 - **Enterprise Security**: OAuth Bearer token validation for Kafka access
 - **Operational Simplicity**: Centralized monitoring, logging, and policy enforcement
@@ -260,7 +260,7 @@ graph TB
 
 - Docker and Docker Compose
 - Okta Account (for identity provider)
-- Kong Konnect Account (for KNEP)
+- Kong Konnect Account (for KEG)
 - Confluent Cloud Account (for managed Kafka)
 - Basic understanding of Kafka and OAuth 2.0
 
@@ -398,7 +398,7 @@ terraform destroy
 ├── .env.example              # Environment variables template
 ├── config/                   # Configuration files
 │   ├── kong/                 # Kong Native Event Proxy configuration
-│   │   └── config.yaml       # KNEP virtual cluster configuration
+│   │   └── config.yaml       # KEG virtual cluster configuration
 │   └── certs/                # TLS certificates (if needed)
 ├── scripts/                  # Demo and utility scripts
 ├── demo-client/              # Demo web application
@@ -407,7 +407,7 @@ terraform destroy
 
 ## Configuration
 
-### Kong Native Event Proxy (KNEP)
+### Kong Native Event Proxy (KEG)
 - Virtual cluster configuration in `config/kong/config.yaml`
 - SASL OAuth Bearer authentication
 - Topic prefixing and routing
