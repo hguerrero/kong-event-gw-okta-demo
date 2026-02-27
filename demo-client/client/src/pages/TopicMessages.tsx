@@ -30,8 +30,9 @@ import {
 import { useOktaAuth } from '@okta/okta-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { kafkaApi } from '../services/api';
-import { TopicMessagesProps, KafkaMessage, TopicMessagesParams } from '../types';
+import { TopicMessagesProps, KafkaMessage, KafkaProduceMessageRequest, KafkaProduceMessageResponse } from '../types';
 import { useKafkaConfig } from '../hooks/useKafkaConfig';
+import SendMessageForm from '../components/SendMessageForm';
 
 const TopicMessages: React.FC<TopicMessagesProps> = () => {
   const { authState } = useOktaAuth();
@@ -98,6 +99,23 @@ const TopicMessages: React.FC<TopicMessagesProps> = () => {
     }
   };
 
+  const handleSendMessage = async (message: KafkaProduceMessageRequest): Promise<KafkaProduceMessageResponse> => {
+    const accessToken = authState?.accessToken?.accessToken;
+    const config = getConfig();
+
+    // Use custom config API if available, otherwise use default
+    if (config) {
+      return await kafkaApi.sendMessageWithConfig(accessToken!, decodedTopicName, message, config);
+    } else {
+      return await kafkaApi.sendMessage(accessToken!, decodedTopicName, message);
+    }
+  };
+
+  const handleMessageSent = (response: KafkaProduceMessageResponse) => {
+    // Refresh messages after sending to show the new message
+    fetchMessages();
+  };
+
   if (!authState?.isAuthenticated) {
     return (
       <Box sx={{ textAlign: 'center', py: 8 }}>
@@ -136,7 +154,7 @@ const TopicMessages: React.FC<TopicMessagesProps> = () => {
             {decodedTopicName}
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Messages retrieved through KNEP virtual clusters
+            Messages retrieved through KEG virtual clusters
           </Typography>
           {isCustomConfig && (
             <Chip
@@ -187,6 +205,14 @@ const TopicMessages: React.FC<TopicMessagesProps> = () => {
           icon={<MessageIcon />}
         />
       </Box>
+
+      {/* Send Message Form */}
+      <SendMessageForm
+        topicName={decodedTopicName}
+        onSendMessage={handleSendMessage}
+        onMessageSent={handleMessageSent}
+        loading={loading}
+      />
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} action={

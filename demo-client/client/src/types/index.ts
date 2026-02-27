@@ -34,6 +34,22 @@ export interface KafkaMessagesResponse {
   timestamp: string;
 }
 
+export interface KafkaProduceMessageRequest {
+  key?: string;
+  value: string;
+  headers?: Record<string, string>;
+  partition?: number;
+}
+
+export interface KafkaProduceMessageResponse {
+  success: boolean;
+  message: string;
+  topic: string;
+  partition: number;
+  offset: string;
+  timestamp: string;
+}
+
 // User Types
 export interface UserInfo {
   sub: string;

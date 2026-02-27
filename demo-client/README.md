@@ -1,6 +1,6 @@
 # Kong Native Event Proxy Demo Client
 
-This **application** provides a web interface for authenticating with Okta using OpenID Connect (OIDC) and demonstrates interaction with Kong Native Event Proxy (KNEP) virtual clusters. It features a fully typed React frontend with a Node.js API backend.
+This **application** provides a web interface for authenticating with Okta using OpenID Connect (OIDC) and demonstrates interaction with Kong Native Event Proxy (KEG) virtual clusters. It features a fully typed React frontend with a Node.js API backend.
 
 ## Features
 
@@ -9,7 +9,7 @@ This **application** provides a web interface for authenticating with Okta using
 - 🎫 **Token management** with automatic refresh and type safety
 - 👤 **User profile** with detailed information display
 - 📋 **Interactive dashboards** with real-time data
-- 🚀 **Kafka topic browsing** through KNEP virtual clusters
+- 🚀 **Kafka topic browsing** through KEG virtual clusters
 - 📨 **Message viewing** with syntax highlighting and filtering
 - 📱 **Responsive design** that works on all devices
 - 🔄 **Real-time updates** and comprehensive error handling
@@ -27,7 +27,7 @@ React Frontend (Port 3000)
        ↓ (API calls with Bearer token)
 Node.js API Server (Port 3001)
        ↓ (SASL OAuth Bearer)
-Kong Native Event Proxy (KNEP)
+Kong Native Event Proxy (KEG)
        ↓ (Authenticated requests)
 3-Node Kafka Cluster
 ```
@@ -74,7 +74,7 @@ When using custom configuration, you'll see:
 
 1. **Okta Developer Account**: You need an Okta developer account and an application configured for OIDC.
 2. **Node.js**: Make sure you have Node.js installed (version 16 or higher recommended).
-3. **Kong Native Event Proxy**: KNEP configured with SASL OAuth Bearer authentication.
+3. **Kong Native Event Proxy**: KEG configured with SASL OAuth Bearer authentication.
 
 ## Okta Application Setup
 
@@ -82,7 +82,7 @@ When using custom configuration, you'll see:
 2. Go to **Applications** > **Create App Integration**
 3. Choose **OIDC - OpenID Connect** and **Single Page Application**
 4. Configure your application:
-   - **App integration name**: Choose any name (e.g., "KNEP Demo Client")
+   - **App integration name**: Choose any name (e.g., "KEG Demo Client")
    - **Grant type**: Authorization Code
    - **Sign-in redirect URIs**: `http://localhost:3000/auth/callback`
    - **Sign-out redirect URIs**: `http://localhost:3000`
@@ -145,7 +145,7 @@ When using custom configuration, you'll see:
 
 4. **Explore the features**:
    - 🏠 **Dashboard**: Overview with user info and quick actions
-   - 📋 **Kafka Topics**: Browse topics through KNEP virtual clusters
+   - 📋 **Kafka Topics**: Browse topics through KEG virtual clusters
    - 📨 **Message Viewer**: View and analyze Kafka messages
    - 👤 **Profile**: Detailed user and token information
 
@@ -171,7 +171,7 @@ When using custom configuration, you'll see:
 |----------|----------|-------------|---------|
 | `OKTA_CLIENT_ID` | ✅ | Your Okta application client ID | - |
 | `OKTA_ISSUER` | ✅ | Your Okta domain (e.g., https://your-domain.okta.com) | - |
-| `KAFKA_BOOTSTRAP` | ❌ | KNEP virtual cluster endpoint | `localhost:19092` |
+| `KAFKA_BOOTSTRAP` | ❌ | KEG virtual cluster endpoint | `localhost:19092` |
 | `PORT` | ❌ | API server port | `3001` |
 | `NODE_ENV` | ❌ | Environment mode | `development` |
 
@@ -227,7 +227,7 @@ When using custom configuration, you'll see:
 ## Security Notes
 
 - **Token-based authentication** using Okta OAuth 2.0
-- **SASL OAuth Bearer** for Kafka authentication through KNEP
+- **SASL OAuth Bearer** for Kafka authentication through KEG
 - **Secure token storage** in React app state (not localStorage)
 - **API endpoint protection** with Bearer token validation
 - Store sensitive environment variables securely (not in version control)
@@ -293,13 +293,13 @@ The application shows:
 - **Token Claims**: All claims contained in the ID token
 - **User Object**: Additional authentication details
 
-## KNEP Integration
+## KEG Integration
 
 The application includes Kong Native Event Proxy integration that uses your Okta access token for authentication:
 
 ### Features
-- **List Topics**: View all topics in your Kafka cluster through KNEP virtual clusters
-- **View Messages**: Click on any topic to view recent messages via KNEP
+- **List Topics**: View all topics in your Kafka cluster through KEG virtual clusters
+- **View Messages**: Click on any topic to view recent messages via KEG
 - **Message Details**: See message keys, values, headers, timestamps, and partition/offset info
 - **OAuth Authentication**: Uses your Okta access token with SASL OAuth Bearer
 - **Virtual Cluster Support**: Access different virtual clusters with topic prefixing
@@ -307,7 +307,7 @@ The application includes Kong Native Event Proxy integration that uses your Okta
 - **Configurable Limits**: Control how many messages to retrieve (default: 50, max: 100)
 
 ### Configuration
-Set the `KAFKA_BOOTSTRAP` environment variable to your KNEP virtual cluster endpoint:
+Set the `KAFKA_BOOTSTRAP` environment variable to your KEG virtual cluster endpoint:
 ```env
 KAFKA_BOOTSTRAP=localhost:19092
 # For team-a virtual cluster (default)
@@ -325,7 +325,7 @@ KAFKA_BOOTSTRAP=localhost:19092
 7. Navigate back to topics list or dashboard as needed
 
 ### Requirements
-- Kong Native Event Proxy (KNEP) configured with SASL OAuth Bearer
+- Kong Native Event Proxy (KEG) configured with SASL OAuth Bearer
 - Your Okta access token must be valid for JWKS verification
-- Network connectivity to KNEP virtual cluster endpoints
-- KNEP configured with your Okta JWKS endpoint
+- Network connectivity to KEG virtual cluster endpoints
+- KEG configured with your Okta JWKS endpoint

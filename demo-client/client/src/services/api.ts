@@ -5,7 +5,9 @@ import {
   StatusResponse,
   ApiError,
   KafkaConnectionConfig,
-  KafkaConnectionTestResponse
+  KafkaConnectionTestResponse,
+  KafkaProduceMessageRequest,
+  KafkaProduceMessageResponse
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '';
@@ -131,6 +133,43 @@ export const kafkaApi = {
         Authorization: `Bearer ${accessToken}`,
       },
     });
+    return response.data;
+  },
+
+  // Send message to a topic
+  sendMessage: async (
+    accessToken: string,
+    topicName: string,
+    message: KafkaProduceMessageRequest
+  ): Promise<KafkaProduceMessageResponse> => {
+    const response = await api.post<KafkaProduceMessageResponse>(
+      `/api/kafka/topics/${encodeURIComponent(topicName)}/produce`,
+      message,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+    return response.data;
+  },
+
+  // Send message to a topic with custom configuration
+  sendMessageWithConfig: async (
+    accessToken: string,
+    topicName: string,
+    message: KafkaProduceMessageRequest,
+    config: KafkaConnectionConfig
+  ): Promise<KafkaProduceMessageResponse> => {
+    const response = await api.post<KafkaProduceMessageResponse>(
+      `/api/kafka/topics-with-config/${encodeURIComponent(topicName)}/produce`,
+      { message, config },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
     return response.data;
   },
 };

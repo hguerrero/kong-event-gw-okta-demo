@@ -102,7 +102,7 @@ const KafkaTopics: React.FC<KafkaTopicsProps> = () => {
             📋 Kafka Topics
           </Typography>
           <Typography variant="h6" color="text.secondary">
-            Topics retrieved through KNEP virtual clusters using your Okta access token
+            Topics retrieved through KEG virtual clusters using your Okta access token
           </Typography>
           {isCustomConfig && (
             <Chip

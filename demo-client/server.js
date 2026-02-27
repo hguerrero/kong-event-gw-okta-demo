@@ -87,7 +87,13 @@ async function listKafkaTopics(accessToken, config = null) {
 
 async function getTopicMessages(accessToken, topicName, maxMessages = 50, config = null) {
   const kafka = createKafkaClient(accessToken, config);
-  const consumer = kafka.consumer({ groupId: `web-consumer-${Date.now()}` });
+  // Use a unique group ID for each request to ensure we always read from earliest
+  const consumer = kafka.consumer({
+    groupId: `web-consumer-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+    // Ensure we always start from the earliest offset
+    sessionTimeout: 30000,
+    heartbeatInterval: 3000,
+  });
 
   try {
     await consumer.connect();
@@ -158,13 +164,59 @@ async function testKafkaConnection(accessToken, config) {
   }
 }
 
+async function produceMessage(accessToken, topicName, messageData, config = null) {
+  const kafka = createKafkaClient(accessToken, config);
+  const producer = kafka.producer();
+
+  try {
+    await producer.connect();
+
+    const message = {
+      key: messageData.key || null,
+      value: messageData.value,
+      headers: messageData.headers || {},
+    };
+
+    // Add partition if specified
+    const produceRequest = {
+      topic: topicName,
+      messages: [message],
+    };
+
+    if (messageData.partition !== undefined) {
+      produceRequest.messages[0].partition = messageData.partition;
+    }
+
+    const result = await producer.send(produceRequest);
+
+    // Return the first (and only) record metadata
+    const recordMetadata = result[0];
+
+    // Log the raw result for debugging
+    console.log('📋 Producer result:', JSON.stringify(recordMetadata, (key, value) =>
+      typeof value === 'bigint' ? value.toString() : value
+    ));
+
+    return {
+      success: true,
+      message: 'Message sent successfully',
+      topic: recordMetadata.topicName || topicName,
+      partition: recordMetadata.partition || 0,
+      offset: recordMetadata.offset != null ? recordMetadata.offset.toString() : '0',
+      timestamp: new Date().toISOString()
+    };
+  } finally {
+    await producer.disconnect();
+  }
+}
+
 // API Routes
 
 // Status endpoint
 app.get('/api/status', (req, res) => {
   res.json({
     status: 'ok',
-    service: 'KNEP Demo Client API',
+    service: 'KEG Demo Client API',
     timestamp: new Date().toISOString(),
     environment: {
       kafka_bootstrap: process.env.KAFKA_BOOTSTRAP || 'localhost:19092',
@@ -346,18 +398,97 @@ app.post('/api/kafka/topics-with-config/:topicName/messages', async (req, res) =
   }
 });
 
+// Produce message to a Kafka topic
+app.post('/api/kafka/topics/:topicName/produce', async (req, res) => {
+  try {
+    const accessToken = extractBearerToken(req);
+    if (!accessToken) {
+      return res.status(401).json({ error: 'Authorization token required' });
+    }
+
+    const topicName = decodeURIComponent(req.params.topicName);
+    const messageData = req.body;
+
+    if (!messageData.value) {
+      return res.status(400).json({ error: 'Message value is required' });
+    }
+
+    console.log(`📤 API: Producing message to topic: ${topicName}`);
+    console.log(`  - Key: ${messageData.key || '(none)'}`);
+    console.log(`  - Value length: ${messageData.value.length} characters`);
+    console.log(`  - Headers: ${messageData.headers ? Object.keys(messageData.headers).length : 0} headers`);
+
+    const result = await produceMessage(accessToken, topicName, messageData);
+    console.log(`✅ API: Message produced to topic: ${topicName}, partition: ${result.partition}, offset: ${result.offset}`);
+
+    res.json(result);
+  } catch (error) {
+    console.error(`❌ API: Error producing message to topic ${req.params.topicName}:`, error.message);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      topic: req.params.topicName,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Produce message to a Kafka topic with custom configuration
+app.post('/api/kafka/topics-with-config/:topicName/produce', async (req, res) => {
+  try {
+    const accessToken = extractBearerToken(req);
+    if (!accessToken) {
+      return res.status(401).json({ error: 'Authorization token required' });
+    }
+
+    const { message, config } = req.body;
+    if (!config) {
+      return res.status(400).json({ error: 'Kafka configuration required' });
+    }
+
+    if (!message || !message.value) {
+      return res.status(400).json({ error: 'Message value is required' });
+    }
+
+    const topicName = decodeURIComponent(req.params.topicName);
+
+    console.log(`📤 API: Producing message to topic: ${topicName} with custom config`);
+    console.log(`  - Key: ${message.key || '(none)'}`);
+    console.log(`  - Value length: ${message.value.length} characters`);
+    console.log(`  - Headers: ${message.headers ? Object.keys(message.headers).length : 0} headers`);
+
+    const result = await produceMessage(accessToken, topicName, message, config);
+    console.log(`✅ API: Message produced to topic: ${topicName} with custom config, partition: ${result.partition}, offset: ${result.offset}`);
+
+    res.json(result);
+  } catch (error) {
+    console.error(`❌ API: Error producing message to topic ${req.params.topicName} with custom config:`, error.message);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      topic: req.params.topicName,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Serve React app for all non-API routes
 app.get('*', (req, res) => {
   if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
   } else {
     res.json({
-      message: 'KNEP Demo Client API',
+      message: 'KEG Demo Client API',
       note: 'In development mode, the React app should be served by Create React App dev server on port 3000',
       api_endpoints: [
         'GET /api/status',
         'GET /api/kafka/topics',
-        'GET /api/kafka/topics/:topicName/messages'
+        'GET /api/kafka/topics/:topicName/messages',
+        'POST /api/kafka/topics/:topicName/produce',
+        'POST /api/kafka/test-connection',
+        'POST /api/kafka/topics-with-config',
+        'POST /api/kafka/topics-with-config/:topicName/messages',
+        'POST /api/kafka/topics-with-config/:topicName/produce'
       ]
     });
   }
@@ -376,7 +507,7 @@ app.use((err, _req, res, _next) => {
 
 // Start server
 app.listen(port, () => {
-  console.log(`🚀 KNEP Demo Client API Server running at http://localhost:${port}`);
+  console.log(`🚀 KEG Demo Client API Server running at http://localhost:${port}`);
   console.log('📋 Environment configuration:');
   console.log(`   - NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
   console.log(`   - KAFKA_BOOTSTRAP: ${process.env.KAFKA_BOOTSTRAP || 'localhost:19092 (default)'}`);
@@ -388,5 +519,10 @@ app.listen(port, () => {
     console.log('   - GET /api/status');
     console.log('   - GET /api/kafka/topics');
     console.log('   - GET /api/kafka/topics/:topicName/messages');
+    console.log('   - POST /api/kafka/topics/:topicName/produce');
+    console.log('   - POST /api/kafka/test-connection');
+    console.log('   - POST /api/kafka/topics-with-config');
+    console.log('   - POST /api/kafka/topics-with-config/:topicName/messages');
+    console.log('   - POST /api/kafka/topics-with-config/:topicName/produce');
   }
 });

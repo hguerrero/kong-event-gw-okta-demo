@@ -1,6 +1,6 @@
 {
-  "short_name": "KNEP Demo",
-  "name": "Kong Native Event Proxy Demo Client",
+  "short_name": "KEG Demo",
+  "name": "Kong Event Gateway Demo Client",
   "icons": [
     {
       "src": "favicon.ico",
