@@ -1,36 +1,10 @@
-name: kong_event_gw_with_confluent
+name: kong_event_gw_demo_client
+
+networks:
+  kong-kafka-net:
+    external: true
 
 services:
-  # Kong Event Gateway
-  kong-event-gateway:
-    image: kong/kong-event-gateway-dev:latest
-    container_name: keg-konnect
-    ports:
-      - "19092-19192:19092-19192"
-      - "29092-29192:29092-29192"
-      - "8080:8080"
-      - "8443:8443"
-    env_file: 
-      - "konnect.env"
-    environment:
-      # KONNECT_API_TOKEN: ${KONNECT_API_TOKEN:-}
-      # KONNECT_API_HOSTNAME: ${KONNECT_API_HOSTNAME:-us.api.konghq.com}
-      # KONNECT_CONTROL_PLANE_ID: ${KONNECT_CONTROL_PLANE_ID:-}
-      KEG__RUNTIME__DRAIN_DURATION: 1s # makes shutdown quicker, not recommended to be set like this in production
-      KEG__OBSERVABILITY__LOG_FLAGS: "info,keg=debug" # Uncomment for debug logging
-    healthcheck:
-      test: curl -f http://localhost:8080/health/probes/liveness
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - ./config/certs:/var/tls
-    networks:
-      - kong-kafka-net
-    secrets:
-      - confluent_cloud_username
-      - confluent_cloud_password
-
   # Demo Client Application (React + Material-UI + Node.js API)
   demo-client:
     build:
@@ -41,8 +15,6 @@ services:
         REACT_APP_OKTA_CLIENT_ID: ${OKTA_CLIENT_ID}
         REACT_APP_API_URL: ""
     container_name: demo-client
-    depends_on:
-      - kong-event-gateway
     ports:
       - "3000:3001"  # Map host port 3000 to container port 3001 (production server)
     environment:
@@ -57,15 +29,67 @@ services:
       # Note: React environment variables are baked into the build during Docker build phase
     networks:
       - kong-kafka-net
+
+  # Kafka Cluster
+  kafka1:
+    image: apache/kafka:3.9.0
+    container_name: kafka1
+    ports:
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: INTERNAL://kafka1:9092,CONTROLLER://kafka1:9093,EXTERNAL://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka1:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:9093,2@kafka2:9093,3@kafka3:9093
+      KAFKA_CLUSTER_ID: 'abcdefghijklmnopqrstuv'
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+    networks:
+      - kong-kafka-net
     profiles:
-      - demo
+      - local
 
-networks:
-  kong-kafka-net:
-    driver: bridge
+  kafka2:
+    image: apache/kafka:3.9.0
+    container_name: kafka2
+    ports:
+      - "9095:9095"
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: INTERNAL://kafka2:9092,CONTROLLER://kafka2:9093,EXTERNAL://0.0.0.0:9095
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka2:9092,EXTERNAL://localhost:9095
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:9093,2@kafka2:9093,3@kafka3:9093
+      KAFKA_CLUSTER_ID: 'abcdefghijklmnopqrstuv'
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+    networks:
+      - kong-kafka-net
+    profiles:
+      - local
 
-secrets:
-  confluent_cloud_username:
-    file: ./config/secrets/confluent-api-key.txt
-  confluent_cloud_password:
-    file: ./config/secrets/confluent-api-secret.txt
+  kafka3:
+    image: apache/kafka:3.9.0
+    container_name: kafka3
+    ports:
+      - "9096:9096"
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: INTERNAL://kafka3:9092,CONTROLLER://kafka3:9093,EXTERNAL://0.0.0.0:9096
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka3:9092,EXTERNAL://localhost:9096
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:9093,2@kafka2:9093,3@kafka3:9093
+      KAFKA_CLUSTER_ID: 'abcdefghijklmnopqrstuv'
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+    networks:
+      - kong-kafka-net
+    profiles:
+      - local
