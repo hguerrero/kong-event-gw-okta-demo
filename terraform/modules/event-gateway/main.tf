@@ -98,3 +98,27 @@ resource "konnect_event_gateway_listener_policy_forward_to_virtual_cluster" "ext
     }
   }
 }
+
+resource "konnect_event_gateway_cluster_policy_acls" "acl_policy" {
+  provider           = konnect
+  name               = "acl_policy_read"
+  description        = "ACL policy for ensuring access to topics"
+  gateway_id         = konnect_event_gateway.this.id
+  virtual_cluster_id = konnect_event_gateway_virtual_cluster.team_confluent.id
+
+  config = {
+    rules = [
+      {
+        action = "allow"
+        operations = [
+          { name = "describe" },
+          { name = "read" },
+        ]
+        resource_type = "topic"
+        resource_names = [{
+          match = "internal-*"
+        }]
+      }
+    ]
+  }
+}
