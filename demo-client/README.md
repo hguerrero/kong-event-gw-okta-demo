@@ -1,6 +1,6 @@
-# Kong Native Event Proxy Demo Client
+# Kong Event Gateway Demo Client
 
-This **application** provides a web interface for authenticating with Okta using OpenID Connect (OIDC) and demonstrates interaction with Kong Native Event Proxy (KEG) virtual clusters. It features a fully typed React frontend with a Node.js API backend.
+This **application** provides a web interface for authenticating with Okta using OpenID Connect (OIDC) and demonstrates interaction with Kong Event Gateway (KEG) virtual clusters.
 
 ## Features
 
@@ -22,14 +22,31 @@ This **application** provides a web interface for authenticating with Okta using
 
 ## Architecture
 
-```
-React Frontend (Port 3000)
-       ↓ (API calls with Bearer token)
-Node.js API Server (Port 3001)
-       ↓ (SASL OAuth Bearer)
-Kong Native Event Proxy (KEG)
-       ↓ (Authenticated requests)
-3-Node Kafka Cluster
+```mermaid
+flowchart TB
+    subgraph Client["Client Layer"]
+        UI[React App<br/>Port 3000]
+        API[Node.js API<br/>Port 3001]
+    end
+    
+    subgraph Auth["Authentication"]
+        Okta[Okta<br/>OIDC Provider]
+    end
+    
+    subgraph KEG["Kong Event Gateway"]
+        VC[Virtual Cluster<br/>OAuth Enabled]
+    end
+    
+    subgraph Kafka["Confluent Cloud"]
+        KB[Kafka Brokers]
+    end
+    
+    UI -->|OIDC Login| Okta
+    Okta -->|JWT Token| UI
+    UI -->|API Calls + Bearer| API
+    API -->|SASL OAuth Bearer| VC
+    VC -->|Authenticated| KB
+    UI -.->|Config| VC
 ```
 
 ## Dynamic Kafka Configuration
@@ -74,7 +91,7 @@ When using custom configuration, you'll see:
 
 1. **Okta Developer Account**: You need an Okta developer account and an application configured for OIDC.
 2. **Node.js**: Make sure you have Node.js installed (version 16 or higher recommended).
-3. **Kong Native Event Proxy**: KEG configured with SASL OAuth Bearer authentication.
+3. **Kong Event Gateway**: KEG deployed to Kong Konnect with virtual cluster configured.
 
 ## Okta Application Setup
 
