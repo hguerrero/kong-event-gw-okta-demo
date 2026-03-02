@@ -1,4 +1,5 @@
 import React from 'react';
+import './kong-theme.css';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -7,26 +8,22 @@ import App from './App';
 
 const theme = createTheme({
   palette: {
-    mode: 'light',
+    mode: 'dark',
     primary: {
-      main: '#000F06',
-      light: '#1a3329',
-      dark: '#000000',
-      contrastText: '#ffffff',
+      main: '#CCFF00', // Electric Lime
+      contrastText: '#000F06',
     },
     secondary: {
-      main: '#CCFF00',
-      light: '#d9ff4d',
-      dark: '#99cc00',
+      main: '#B7BDB5', // Bay
       contrastText: '#000F06',
     },
     background: {
-      default: '#ffffff',
-      paper: '#ffffff',
+      default: '#000F06', // Dark Green
+      paper: '#101110',
     },
     text: {
-      primary: '#000F06',
-      secondary: '#4A4D49',
+      primary: '#CCFF00',
+      secondary: '#B7BDB5',
     },
     grey: {
       50: '#E7EDE5',
@@ -42,7 +39,7 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Funnel Sans", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: 'Funnel Sans, Arial, sans-serif',
     h1: {
       fontSize: '4.5rem',
       fontWeight: 700,
@@ -83,7 +80,7 @@ const theme = createTheme({
       lineHeight: 1.5,
     },
     button: {
-      fontFamily: '"Space Grotesk", "Funnel Sans", sans-serif',
+      fontFamily: 'Space Grotesk, Funnel Sans, sans-serif',
       fontWeight: 600,
       textTransform: 'none',
     },
@@ -95,7 +92,8 @@ const theme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          backgroundColor: '#ffffff',
+          backgroundColor: '#000F06',
+          color: '#CCFF00',
         },
       },
     },
@@ -113,6 +111,7 @@ const theme = createTheme({
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24)',
           borderRadius: 8,
           border: '1px solid #CDD4CB',
+          backgroundColor: '#101110',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           '&:hover': {
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08)',
@@ -126,10 +125,10 @@ const theme = createTheme({
         root: {
           borderRadius: 8,
           textTransform: 'none',
-          fontWeight: 600,
+          fontWeight: 700,
           padding: '12px 24px',
           fontSize: '1rem',
-          fontFamily: '"Space Grotesk", "Funnel Sans", sans-serif',
+          fontFamily: 'Space Grotesk, Funnel Sans, sans-serif',
           transition: 'all 0.2s ease-in-out',
         },
         contained: {
@@ -137,24 +136,27 @@ const theme = createTheme({
           color: '#000F06',
           boxShadow: 'none',
           '&:hover': {
-            backgroundColor: '#b3e600',
+            backgroundColor: '#e6ff4d',
             boxShadow: 'none',
             transform: 'translateY(-1px)',
           },
         },
         containedPrimary: {
           backgroundColor: '#000F06',
-          color: '#ffffff',
+          color: '#CCFF00',
           '&:hover': {
-            backgroundColor: '#1a3329',
+            backgroundColor: '#4A4D49',
           },
         },
         outlined: {
           borderWidth: '2px',
-          borderColor: '#000F06',
+          borderColor: '#CCFF00',
+          color: '#CCFF00',
           '&:hover': {
             borderWidth: '2px',
-            borderColor: '#000F06',
+            borderColor: '#e6ff4d',
+            color: '#000F06',
+            backgroundColor: '#B7BDB5',
             transform: 'translateY(-1px)',
           },
         },
@@ -167,11 +169,11 @@ const theme = createTheme({
           fontWeight: 500,
         },
         colorPrimary: {
-          backgroundColor: '#000F06',
-          color: '#ffffff',
+          backgroundColor: '#CCFF00',
+          color: '#000F06',
         },
         colorSecondary: {
-          backgroundColor: '#CCFF00',
+          backgroundColor: '#B7BDB5',
           color: '#000F06',
         },
       },
@@ -182,10 +184,10 @@ const theme = createTheme({
           '& .MuiOutlinedInput-root': {
             borderRadius: 8,
             '&:hover .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#000F06',
+              borderColor: '#CCFF00',
             },
             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#000F06',
+              borderColor: '#CCFF00',
               borderWidth: '2px',
             },
           },
@@ -203,6 +205,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: 'none',
+          backgroundColor: '#101110',
         },
       },
     },

@@ -5,7 +5,7 @@ This repository demonstrates how to configure Kong Event Gateway to mediate auth
 ## Overview
 
 This demo showcases:
-- Kong Native Event Proxy (KEG) configuration for Confluent Cloud integration
+- Kong Event Gateway (KEG) native Kafka proxy configuration for Confluent Cloud integration
 - Okta OAuth 2.0 authentication with SASL OAuth Bearer
 - Confluent Cloud managed Kafka service
 - Virtual cluster configuration with topic prefixing
@@ -27,8 +27,8 @@ graph TB
     %% API Gateway Layer
     DemoClient --> APIServer[🚀 Node.js API Server<br/>Express + OAuth Middleware]
 
-    %% Kong Native Event Proxy Layer
-    APIServer --> KEG[⚡ Kong Native Event Proxy<br/>KEG Virtual Cluster]
+    %% Kong Event Gateway Layer
+    APIServer --> KEG[⚡ Kong Event Gateway<br/>Virtual Cluster]
 
     %% Confluent Cloud
     KEG --> ConfluentCloud[☁️ Confluent Cloud<br/>Managed Kafka Service]
@@ -67,7 +67,7 @@ graph TB
 | **Demo Client** | Web UI for Kafka topic browsing | React + TypeScript + Material-UI | 3000 |
 | **API Server** | Backend API with OAuth validation | Node.js + Express + Okta SDK | 3001 |
 | **Okta** | Identity Provider & OAuth Server | Okta Cloud Service | - |
-| **KEG** | Event Gateway & Kafka Proxy | Kong Native Event Proxy | 19092 |
+| **KEG** | Event Gateway & Native Kafka Proxy | Kong Event Gateway | 19092 |
 | **Confluent Cloud** | Managed Kafka Service | Confluent Cloud | 9092 (SSL) |
 | **Kong Konnect** | Control Plane Management | Kong Konnect Cloud | - |
 
@@ -234,7 +234,7 @@ graph TB
 | Benefit | Description | Implementation |
 |---------|-------------|----------------|
 | **🔐 Zero Trust Security** | Every request authenticated & authorized | Okta OIDC + SASL OAuth Bearer |
-| **⚡ Event Gateway Pattern** | Unified API for event streaming | Kong Native Event Proxy (KEG) |
+| **⚡ Event Gateway Pattern** | Unified API for event streaming | Kong Event Gateway (KEG) |
 | **🏗️ Microservices Ready** | Loosely coupled, independently deployable | Docker containers + REST APIs |
 | **📈 Managed Scalability** | Auto-scaling managed service | Confluent Cloud + Elastic scaling |
 | **🛡️ Defense in Depth** | Multiple security layers | TLS + OAuth + RBAC + Cloud security |
@@ -244,7 +244,7 @@ graph TB
 
 ### Design Decisions
 
-#### **Why Kong Native Event Proxy (KEG)?**
+#### **Why Kong Event Gateway (KEG)?**
 - **Unified API Surface**: Single gateway for both REST APIs and event streams
 - **Enterprise Security**: OAuth Bearer token validation for Kafka access
 - **Operational Simplicity**: Centralized monitoring, logging, and policy enforcement
@@ -407,7 +407,7 @@ terraform destroy
 
 ## Configuration
 
-### Kong Native Event Proxy (KEG)
+### Kong Event Gateway (KEG)
 - Virtual cluster configuration in `config/kong/config.yaml`
 - SASL OAuth Bearer authentication
 - Topic prefixing and routing

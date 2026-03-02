@@ -101,10 +101,29 @@ const Dashboard: React.FC<DashboardProps> = () => {
     <Box>
       {/* Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h3" component="h1" gutterBottom color="primary">
+        <Typography
+          variant="h3"
+          component="h1"
+          gutterBottom
+          sx={{
+            color: 'var(--kong-electric-lime)',
+            fontFamily: 'var(--kong-font-primary)',
+            fontWeight: 700,
+            fontSize: { xs: '2.5rem', md: '3.5rem' },
+            textShadow: '0 2px 16px #000F06',
+          }}
+        >
           🎉 Welcome to Your Dashboard
         </Typography>
-        <Typography variant="h6" color="text.secondary">
+        <Typography
+          variant="h6"
+          sx={{
+            color: 'var(--kong-bay)',
+            fontFamily: 'var(--kong-font-primary)',
+            fontWeight: 400,
+            fontSize: { xs: '1.1rem', md: '1.5rem' },
+          }}
+        >
           You're successfully authenticated with Okta OIDC
         </Typography>
       </Box>
@@ -128,7 +147,17 @@ const Dashboard: React.FC<DashboardProps> = () => {
               size="large"
               startIcon={<TopicIcon />}
               onClick={() => navigate('/kafka/topics')}
-              sx={{ py: 2 }}
+              sx={{
+                py: 2,
+                backgroundColor: 'var(--kong-electric-lime)',
+                color: 'var(--kong-dark-green)',
+                fontWeight: 700,
+                fontFamily: 'var(--kong-font-button)',
+                '&:hover': {
+                  backgroundColor: '#e6ff4d',
+                  color: '#000F06',
+                },
+              }}
             >
               Browse Kafka Topics
             </Button>
@@ -140,7 +169,18 @@ const Dashboard: React.FC<DashboardProps> = () => {
               size="large"
               startIcon={<PersonIcon />}
               onClick={() => navigate('/profile')}
-              sx={{ py: 2 }}
+              sx={{
+                py: 2,
+                borderColor: 'var(--kong-electric-lime)',
+                color: 'var(--kong-electric-lime)',
+                fontWeight: 700,
+                fontFamily: 'var(--kong-font-button)',
+                '&:hover': {
+                  borderColor: '#e6ff4d',
+                  color: '#000F06',
+                  backgroundColor: 'rgba(204,255,0,0.08)',
+                },
+              }}
             >
               View Profile
             </Button>
@@ -152,7 +192,18 @@ const Dashboard: React.FC<DashboardProps> = () => {
               size="large"
               startIcon={<RefreshIcon />}
               onClick={fetchUserInfo}
-              sx={{ py: 2 }}
+              sx={{
+                py: 2,
+                borderColor: 'var(--kong-bay)',
+                color: 'var(--kong-bay)',
+                fontWeight: 700,
+                fontFamily: 'var(--kong-font-button)',
+                '&:hover': {
+                  borderColor: '#B7BDB5',
+                  color: '#000F06',
+                  backgroundColor: 'rgba(183,189,181,0.08)',
+                },
+              }}
             >
               Refresh Data
             </Button>
@@ -238,7 +289,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
           </AccordionSummary>
           <AccordionDetails>
             <Box sx={{ 
-              bgcolor: 'grey.100', 
+              color: "text.secondary",
               p: 2, 
               borderRadius: 1, 
               fontFamily: 'monospace',
@@ -257,7 +308,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
           </AccordionSummary>
           <AccordionDetails>
             <Box sx={{ 
-              bgcolor: 'grey.100', 
+              color: "text.secondary",
               p: 2, 
               borderRadius: 1, 
               fontFamily: 'monospace',

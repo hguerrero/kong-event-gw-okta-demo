@@ -1,0 +1,71 @@
+/* Kong 2026 Brand Theme CSS Variables */
+:root {
+  --kong-electric-lime: #CCFF00;
+  --kong-dark-green: #000F06;
+  --kong-bay: #B7BDB5;
+  --kong-white: #FFFFFF;
+  --kong-gray-50: #E7EDE5;
+  --kong-gray-100: #D7DED4;
+  --kong-gray-200: #CDD4CB;
+  --kong-gray-300: #B7BDB5;
+  --kong-gray-500: #858983;
+  --kong-gray-700: #4A4D49;
+  --kong-gray-900: #101110;
+
+  --kong-font-primary: 'Funnel Sans', Arial, sans-serif;
+  --kong-font-code: 'Roboto Mono', monospace;
+  --kong-font-button: 'Space Grotesk', Arial, sans-serif;
+}
+
+body {
+  font-family: var(--kong-font-primary);
+  background-color: var(--kong-dark-green);
+  color: var(--kong-bay);
+}
+
+.kong-btn-primary {
+  background: var(--kong-electric-lime);
+  color: var(--kong-dark-green);
+  font-family: var(--kong-font-button);
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+.kong-btn-primary:hover {
+  background: #e6ff4d;
+}
+
+.kong-btn-secondary {
+  background: var(--kong-dark-green);
+  color: var(--kong-electric-lime);
+  font-family: var(--kong-font-button);
+  border: 2px solid var(--kong-electric-lime);
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+.kong-btn-secondary:hover {
+  background: var(--kong-gray-700);
+}
+
+.kong-heading-xl {
+  font-family: var(--kong-font-primary);
+  font-size: 72px;
+  font-weight: 700;
+  line-height: 78px;
+}
+.kong-heading-l {
+  font-family: var(--kong-font-primary);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 38px;
+}
+.kong-body-l {
+  font-family: var(--kong-font-primary);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 28px;
+}

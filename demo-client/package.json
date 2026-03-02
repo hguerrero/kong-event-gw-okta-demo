@@ -24,6 +24,7 @@
     "path": "^0.12.7"
   },
   "devDependencies": {
+    "@types/node": "^25.3.3",
     "concurrently": "^8.2.2"
   }
 }

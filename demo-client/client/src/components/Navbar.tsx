@@ -52,20 +52,28 @@ const Navbar: React.FC<NavbarProps> = () => {
       position="static"
       elevation={0}
       sx={{
-        backgroundColor: '#003459',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        backgroundColor: 'var(--kong-dark-green)',
+        borderBottom: '2px solid var(--kong-electric-lime)',
+        boxShadow: '0 2px 0 0 var(--kong-electric-lime)',
       }}
     >
       <Toolbar sx={{ px: { xs: 2, md: 4 } }}>
         <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+          {/* Walker Emblem placeholder */}
+          <Box sx={{ width: 36, height: 36, mr: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {/* TODO: Replace with SVG or image for Walker Emblem */}
+            <Box sx={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--kong-electric-lime)', display: 'inline-block' }} />
+          </Box>
           <Typography
             variant="h6"
             component="div"
             sx={{
               cursor: 'pointer',
               fontWeight: 700,
-              fontSize: '1.25rem',
-              color: 'white',
+              fontSize: '1.5rem',
+              color: 'var(--kong-electric-lime)',
+              fontFamily: 'var(--kong-font-primary)',
+              letterSpacing: '0.01em',
             }}
             onClick={() => navigate('/')}
           >

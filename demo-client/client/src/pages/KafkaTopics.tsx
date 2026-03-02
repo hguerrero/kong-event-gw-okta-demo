@@ -107,7 +107,7 @@ const KafkaTopics: React.FC<KafkaTopicsProps> = () => {
           {isCustomConfig && (
             <Chip
               label="Using Custom Configuration"
-              color="info"
+              color="primary"
               size="small"
               sx={{ mt: 1 }}
             />

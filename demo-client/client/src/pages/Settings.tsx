@@ -119,10 +119,31 @@ const Settings: React.FC = () => {
   return (
     <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
+        <Typography
+          variant="h4"
+          component="h1"
+          gutterBottom
+          sx={{
+            color: 'var(--kong-electric-lime)',
+            fontFamily: 'var(--kong-font-primary)',
+            fontWeight: 700,
+            fontSize: { xs: '2rem', md: '2.5rem' },
+            textShadow: '0 2px 16px #000F06',
+          }}
+        >
           Kafka Connection Settings
         </Typography>
-        <Typography variant="body1" color="text.secondary" paragraph>
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          paragraph
+          sx={{
+            color: 'var(--kong-bay)',
+            fontFamily: 'var(--kong-font-primary)',
+            fontWeight: 400,
+            fontSize: { xs: '1rem', md: '1.25rem' },
+          }}
+        >
           Configure your Kafka connection parameters. These settings will be used for all Kafka operations.
         </Typography>
 
@@ -221,6 +242,16 @@ const Settings: React.FC = () => {
             onClick={handleSaveConfig}
             disabled={saving}
             startIcon={saving ? <CircularProgress size={20} /> : null}
+            sx={{
+              backgroundColor: 'var(--kong-electric-lime)',
+              color: 'var(--kong-dark-green)',
+              fontWeight: 700,
+              fontFamily: 'var(--kong-font-button)',
+              '&:hover': {
+                backgroundColor: '#e6ff4d',
+                color: '#000F06',
+              },
+            }}
           >
             {saving ? 'Saving...' : 'Save Configuration'}
           </Button>
@@ -230,6 +261,17 @@ const Settings: React.FC = () => {
             onClick={handleTestConnection}
             disabled={testing || !authState?.isAuthenticated}
             startIcon={testing ? <CircularProgress size={20} /> : null}
+            sx={{
+              borderColor: 'var(--kong-electric-lime)',
+              color: 'var(--kong-electric-lime)',
+              fontWeight: 700,
+              fontFamily: 'var(--kong-font-button)',
+              '&:hover': {
+                borderColor: '#e6ff4d',
+                color: '#000F06',
+                backgroundColor: 'rgba(204,255,0,0.08)',
+              },
+            }}
           >
             {testing ? 'Testing...' : 'Test Connection'}
           </Button>
@@ -238,6 +280,15 @@ const Settings: React.FC = () => {
             variant="text"
             onClick={handleResetToDefaults}
             color="secondary"
+            sx={{
+              color: 'var(--kong-bay)',
+              fontWeight: 700,
+              fontFamily: 'var(--kong-font-button)',
+              '&:hover': {
+                color: '#000F06',
+                backgroundColor: 'rgba(183,189,181,0.08)',
+              },
+            }}
           >
             Reset to Defaults
           </Button>
