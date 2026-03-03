@@ -179,13 +179,13 @@ variable "external_advertised_host" {
 variable "port_range_start" {
   description = "Port range start for Kafka listeners"
   type        = number
-  default     = 19092
+  default     = 29092
 }
 
 variable "port_range_end" {
   description = "Port range end for Kafka listeners"
   type        = number
-  default     = 19390
+  default     = 29192
 }
 
 variable "api_port" {
