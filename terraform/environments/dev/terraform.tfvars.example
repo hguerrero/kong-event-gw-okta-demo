@@ -1,9 +1,21 @@
-bootstrap_servers  = ["pkc-xxxxx.us-east-2.aws.confluent.cloud:9092"]
+# Kafka Backend Configuration
+# Set to "confluent" for Confluent Cloud or "local" for local Kafka cluster
+kafka_backend = "confluent"
+
+# Confluent Cloud settings (used when kafka_backend = "confluent")
+bootstrap_servers = ["pkc-xxxxx.us-east-2.aws.confluent.cloud:9092"]
+
+# Local Kafka settings (used when kafka_backend = "local")
+# Docker Compose exposes ports 9092, 9093, 9094 for kafka1, kafka2, kafka3
+# bootstrap_servers = ["localhost:9092"]
+
+# Okta JWKS Endpoint
 okta_jwks_endpoint = "https://your-org.okta.com/oauth2/v1/keys"
 
 # Kafka credentials - provide via terraform.tfvars or -var flags:
 # kafka_username = "your-confluent-api-key"
 # kafka_password = "your-confluent-api-secret"
+# Note: Not required when using local Kafka (kafka_backend = "local")
 
 # Konnect token - provide via environment variable:
 # export TF_VAR_konnect_token="your-konnect-pat"

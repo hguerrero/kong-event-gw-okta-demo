@@ -10,6 +10,7 @@ module "event_gateway" {
   name        = var.event_gateway_name
   description = var.event_gateway_description
 
+  kafka_backend                 = var.kafka_backend
   confluent_cluster_name        = var.confluent_cluster_name
   confluent_cluster_description = var.confluent_cluster_description
   bootstrap_servers             = var.bootstrap_servers
@@ -37,6 +38,7 @@ module "event_gateway" {
   listener_policy_name        = var.listener_policy_name
   listener_policy_description = var.listener_policy_description
   advertised_host             = var.advertised_host
+  external_advertised_host    = var.external_advertised_host
 }
 
 module "data_plane" {
@@ -44,6 +46,7 @@ module "data_plane" {
 
   event_gateway_id = module.event_gateway.event_gateway_id
 
+  kafka_backend  = var.kafka_backend
   kafka_username = var.kafka_username
   kafka_password = var.kafka_password
 
@@ -55,4 +58,5 @@ module "data_plane" {
   drain_duration = var.drain_duration
   log_flags      = var.log_flags
   docker_network = var.docker_network
+  container_name = var.advertised_host
 }

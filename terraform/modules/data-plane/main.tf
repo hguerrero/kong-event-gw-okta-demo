@@ -108,12 +108,28 @@ variable "kafka_username" {
   description = "Kafka cluster username (Confluent Cloud API Key)"
   type        = string
   sensitive   = true
+  default     = ""
+  nullable    = true
 }
 
 variable "kafka_password" {
   description = "Kafka cluster password (Confluent Cloud API Secret)"
   type        = string
   sensitive   = true
+  default     = ""
+  nullable    = true
+}
+
+variable "kafka_backend" {
+  description = "Backend type: 'confluent' or 'local'"
+  type        = string
+  default     = "confluent"
+}
+
+variable "container_name" {
+  description = "Name to be used to create the container and setup the hostname"
+  type        = string
+  default     = "kong-event-gateway"
 }
 
 provider "docker" {
@@ -172,9 +188,16 @@ resource "docker_image" "keg" {
   keep_locally = true
 }
 
+locals {
+  kafka_creds = var.kafka_backend == "confluent" && var.kafka_username != "" && var.kafka_password != "" ? [
+    "KAFKA_USERNAME=${var.kafka_username}",
+    "KAFKA_PASSWORD=${var.kafka_password}",
+  ] : []
+}
+
 resource "docker_container" "event_gateway" {
   image = docker_image.keg.image_id
-  name  = "kong-event-gateway"
+  name  = var.container_name
 
   dynamic "ports" {
     for_each = range(var.port_range_start, var.port_range_end)
@@ -194,17 +217,15 @@ resource "docker_container" "event_gateway" {
     external = var.https_port
   }
 
-  env = [
+  env = concat([
     "KONNECT_REGION=${var.konnect_region}",
     "KONNECT_DOMAIN=${var.konnect_domain}",
     "KONNECT_GATEWAY_CLUSTER_ID=${var.event_gateway_id}",
     "KONNECT_CLIENT_CERT=${tls_self_signed_cert.keg_data_plane.cert_pem}",
     "KONNECT_CLIENT_KEY=${tls_private_key.keg_data_plane.private_key_pem}",
-    "KAFKA_USERNAME=${var.kafka_username}",
-    "KAFKA_PASSWORD=${var.kafka_password}",
     "KEG_RUNTIME_DRAIN_DURATION=${var.drain_duration}",
     "KEG__OBSERVABILITY__LOG_FLAGS=${var.log_flags}",
-  ]
+  ], local.kafka_creds)
 
   networks_advanced {
     name = var.docker_network != "" ? docker_network.keg_network[0].id : null

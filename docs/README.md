@@ -19,11 +19,15 @@ This directory contains documentation for the Kong Event Gateway demo.
 ## Getting Started
 
 1. Deploy KEG using Terraform (see main [README.md](../README.md))
+   - Choose **Confluent Cloud** or **Local Kafka** backend in terraform.tfvars
 2. Configure Okta application
-3. Run the demo client
+3. Run the demo client:
+   - Confluent Cloud: `docker-compose up -d`
+   - Local Kafka: `docker-compose --profile local up -d`
 
 ## Key Concepts
 
 - **KEG (Kong Event Gateway)** - Deployed to Kong Konnect via Terraform
+- **Backend Cluster** - Kafka backend (Confluent Cloud or Local)
 - **Virtual Cluster** - Logical partition with OAuth authentication
 - **Demo Client** - React application for testing KEG

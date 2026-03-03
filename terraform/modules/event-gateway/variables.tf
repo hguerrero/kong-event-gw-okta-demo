@@ -9,6 +9,16 @@ variable "description" {
   default     = ""
 }
 
+variable "kafka_backend" {
+  description = "Backend type: 'confluent' or 'local'"
+  type        = string
+  default     = "confluent"
+  validation {
+    condition     = contains(["confluent", "local"], var.kafka_backend)
+    error_message = "kafka_backend must be 'confluent' or 'local'."
+  }
+}
+
 variable "confluent_cluster_name" {
   description = "Confluent Cloud cluster name"
   type        = string
@@ -21,7 +31,7 @@ variable "confluent_cluster_description" {
 }
 
 variable "bootstrap_servers" {
-  description = "Confluent Cloud Bootstrap Servers"
+  description = "Bootstrap Servers (Confluent Cloud or Local Kafka)"
   type        = list(string)
 }
 

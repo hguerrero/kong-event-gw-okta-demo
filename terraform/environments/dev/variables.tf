@@ -4,6 +4,12 @@ variable "konnect_token" {
   sensitive   = true
 }
 
+variable "kafka_backend" {
+  description = "Backend type: 'confluent' or 'local'"
+  type        = string
+  default     = "confluent"
+}
+
 variable "kafka_username" {
   description = "Kafka cluster username (Confluent Cloud API Key)"
   type        = string
@@ -47,7 +53,7 @@ variable "confluent_cluster_description" {
 }
 
 variable "bootstrap_servers" {
-  description = "Confluent Cloud Bootstrap Servers"
+  description = "Bootstrap Servers"
   type        = list(string)
 }
 
@@ -160,6 +166,12 @@ variable "listener_policy_description" {
 
 variable "advertised_host" {
   description = "Advertised host for port mapping"
+  type        = string
+  default     = "kong-event-gateway"
+}
+
+variable "external_advertised_host" {
+  description = "Advertised host for external listener port mapping"
   type        = string
   default     = "localhost"
 }

@@ -9,8 +9,8 @@ output "event_gateway_name" {
 }
 
 output "backend_cluster_id" {
-  description = "Confluent Cloud backend cluster ID"
-  value       = konnect_event_gateway_backend_cluster.confluent_cloud.id
+  description = "Backend cluster ID (Confluent Cloud or Local)"
+  value       = var.kafka_backend == "confluent" ? konnect_event_gateway_backend_cluster.confluent_cloud[0].id : konnect_event_gateway_backend_cluster.local[0].id
 }
 
 output "virtual_cluster_id" {

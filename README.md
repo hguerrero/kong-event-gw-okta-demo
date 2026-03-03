@@ -1,15 +1,33 @@
 # Kong Event Gateway + Okta OAuth Demo
 
-This repository demonstrates how to configure Kong Event Gateway to mediate authentication to Confluent Cloud using OAuth with Okta as the identity provider.
+This repository demonstrates how to configure Kong Event Gateway to mediate authentication to a Kafka backend (Confluent Cloud or local) using OAuth with Okta as the identity provider.
 
 ## Overview
 
 This demo showcases:
-- Kong Event Gateway (KEG) native Kafka proxy configuration for Confluent Cloud integration
+- Kong Event Gateway (KEG) native Kafka proxy configuration
 - Okta OAuth 2.0 authentication with SASL OAuth Bearer
-- Confluent Cloud managed Kafka service
+- **Two backend options**: Confluent Cloud (managed) or Local Kafka (docker-compose)
 - Virtual cluster configuration with topic prefixing
 - Secure cloud-to-cloud connectivity
+
+## Backend Options
+
+This demo supports two Kafka backend options:
+
+| Backend | Description | Use Case |
+|---------|-------------|----------|
+| **Confluent Cloud** | Managed Kafka service in AWS/Azure/GCP | Production, cloud deployments |
+| **Local Kafka** | Local Kafka cluster via Docker Compose | Development, testing, demos |
+
+### Quick Comparison
+
+| Feature | Confluent Cloud | Local Kafka |
+|---------|-----------------|-------------|
+| Authentication | SASL Plain (API Key/Secret) | None |
+| TLS | Required | Optional (disabled by default) |
+| Setup | Requires Confluent account | `docker-compose --profile local up` |
+| Cost | Paid service | Free (local) |
 
 ## Architecture
 
@@ -261,12 +279,31 @@ graph TB
 - Docker and Docker Compose
 - Okta Account (for identity provider)
 - Kong Konnect Account (for KEG)
-- Confluent Cloud Account (for managed Kafka)
+- **Either** Confluent Cloud Account **or** local Docker (for Kafka)
 - Basic understanding of Kafka and OAuth 2.0
 
 ## Deploying with Terraform
 
 This repository includes Terraform configuration to deploy the Kong Event Gateway infrastructure to Kong Konnect.
+
+### Choose Your Kafka Backend
+
+#### Option 1: Confluent Cloud (Default)
+```hcl
+# terraform.tfvars
+kafka_backend       = "confluent"
+bootstrap_servers  = ["pkc-xxxxx.us-east-2.aws.confluent.cloud:9092"]
+kafka_username     = "your-confluent-api-key"
+kafka_password     = "your-confluent-api-secret"
+```
+
+#### Option 2: Local Kafka
+```hcl
+# terraform.tfvars
+kafka_backend            = "local"
+bootstrap_servers_local = ["localhost:9094"]
+# kafka_username and kafka_password not required
+```
 
 ### Terraform Structure
 
@@ -339,13 +376,15 @@ terraform/
 
 ### Required Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `konnect_token` | Kong Konnect Personal Access Token (via `TF_VAR_konnect_token` env) | Yes |
-| `bootstrap_servers` | Confluent Cloud Bootstrap Servers | Yes |
-| `okta_jwks_endpoint` | Okta JWKS endpoint for OAuth validation | Yes |
-| `kafka_username` | Confluent Cloud API Key | Yes |
-| `kafka_password` | Confluent Cloud API Secret | Yes |
+| Variable | Description | Required | Backend |
+|----------|-------------|----------|---------|
+| `konnect_token` | Kong Konnect Personal Access Token (via `TF_VAR_konnect_token` env) | Yes | Both |
+| `kafka_backend` | Backend type: `confluent` or `local` | No (default: `confluent`) | Both |
+| `bootstrap_servers` | Confluent Cloud Bootstrap Servers | Yes (if `confluent`) | Confluent |
+| `bootstrap_servers_local` | Local Kafka Bootstrap Servers | Yes (if `local`) | Local |
+| `okta_jwks_endpoint` | Okta JWKS endpoint for OAuth validation | Yes | Both |
+| `kafka_username` | Confluent Cloud API Key | Only if `confluent` | Confluent |
+| `kafka_password` | Confluent Cloud API Secret | Only if `confluent` | Confluent |
 
 ### Output Values
 
@@ -372,19 +411,43 @@ terraform destroy
    cd kong-event-gw-okta-demo
    ```
 
-2. **Configure environment**
-   - Copy `.env.example` to `.env`
-   - Update with your Okta and Kong Konnect credentials
-   - Add Confluent Cloud credentials to `config/secrets/` directory
-   - See [Environment Variables Guide](docs/environment-variables.md) for detailed configuration
-   - See [Confluent Cloud Setup](config/secrets/README.md) for authentication files
+2. **Choose your Kafka backend and configure Terraform**
 
-3. **Start the environment**
+   **For Confluent Cloud:**
+   ```bash
+   cp terraform/environments/dev/terraform.tfvars.example terraform/environments/dev/terraform.tfvars
+   # Edit terraform.tfvars with kafka_backend = "confluent"
+   ```
+
+   **For Local Kafka:**
+   ```bash
+   cp terraform/environments/dev/terraform.tfvars.example terraform/environments/dev/terraform.tfvars
+   # Edit terraform.tfvars with:
+   # kafka_backend = "local"
+   # bootstrap_servers_local = ["localhost:9094"]
+   ```
+
+3. **Deploy infrastructure with Terraform**
+   ```bash
+   cd terraform/environments/dev
+   export TF_VAR_konnect_token="your-konnect-pat"
+   terraform init
+   terraform apply
+   ```
+
+4. **Start the Docker environment**
+   
+   **For Confluent Cloud:**
    ```bash
    docker-compose up -d
    ```
 
-4. **Access the demo client application**
+   **For Local Kafka:**
+   ```bash
+   docker-compose --profile local up -d
+   ```
+
+5. **Access the demo client application**
    
    ```bash
    http://localhost:3000
@@ -411,18 +474,26 @@ terraform destroy
 - Virtual cluster configuration in `config/kong/config.yaml`
 - SASL OAuth Bearer authentication
 - Topic prefixing and routing
-- Confluent Cloud integration with SASL_SSL
+- Kafka backend integration (Confluent Cloud or Local)
 
 ### Okta OAuth
 - OAuth 2.0 application setup
 - JWKS endpoint configuration
 - Token validation with SASL OAuth Bearer
 
-### Confluent Cloud
+### Kafka Backends
+
+#### Confluent Cloud
 - Fully managed Kafka service
 - Enterprise-grade security and compliance
 - Auto-scaling and global availability
 - SASL_SSL authentication with API keys
+
+#### Local Kafka
+- Kafka cluster running locally via Docker Compose
+- Enabled with `docker-compose --profile local up`
+- No authentication by default
+- TLS disabled for local development
 
 ## Usage
 

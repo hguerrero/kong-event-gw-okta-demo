@@ -5,6 +5,7 @@ resource "konnect_event_gateway" "this" {
 }
 
 resource "konnect_event_gateway_backend_cluster" "confluent_cloud" {
+  count             = var.kafka_backend == "confluent" ? 1 : 0
   provider          = konnect
   gateway_id        = konnect_event_gateway.this.id
   name              = var.confluent_cluster_name
@@ -23,13 +24,30 @@ resource "konnect_event_gateway_backend_cluster" "confluent_cloud" {
   depends_on                                    = [konnect_event_gateway.this]
 }
 
+resource "konnect_event_gateway_backend_cluster" "local" {
+  count             = var.kafka_backend == "local" ? 1 : 0
+  provider          = konnect
+  gateway_id        = konnect_event_gateway.this.id
+  name              = "local-kafka"
+  description       = "Local Kafka cluster"
+  bootstrap_servers = var.bootstrap_servers
+  authentication    = {
+    anonymous = {}
+  }
+  tls = {
+    enabled = false
+  }
+  insecure_allow_anonymous_virtual_cluster_auth = var.allow_anonymous_auth
+  depends_on                                    = [konnect_event_gateway.this]
+}
+
 resource "konnect_event_gateway_virtual_cluster" "team_confluent" {
   provider    = konnect
   gateway_id  = konnect_event_gateway.this.id
   name        = var.virtual_cluster_name
   description = var.virtual_cluster_description
   destination = {
-    id = konnect_event_gateway_backend_cluster.confluent_cloud.id
+    id = var.kafka_backend == "confluent" ? konnect_event_gateway_backend_cluster.confluent_cloud[0].id : konnect_event_gateway_backend_cluster.local[0].id
   }
   dns_label = var.virtual_cluster_dns_label
   acl_mode  = var.virtual_cluster_acl_mode
@@ -116,7 +134,7 @@ resource "konnect_event_gateway_cluster_policy_acls" "acl_policy" {
         ]
         resource_type = "topic"
         resource_names = [{
-          match = "internal-*"
+          match = "*"
         }]
       }
     ]
